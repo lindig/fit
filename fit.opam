@@ -1,0 +1,16 @@
+opam-version: "2.0"
+name: "fit"
+synopsis: "A parser for FIT files."
+maintainer: "Christian Lindig <lindig@gmail.com>"
+authors: "Christian Lindig <lindig@gmail.com>"
+license: "MIT"
+homepage: "https://github.com/lindig/fit"
+bug-reports: "https://github.com/lindig/fit/issues"
+depends: [
+  "dune" {build}
+  "cmdliner"
+  "angstrom"
+  "ezjsonm"
+]
+build: ["dune" "build" "-j" jobs "@install"]
+dev-repo: "git+https://github.com/lindig/fit.git"
