@@ -26,3 +26,6 @@ format:
 	$(DUNE) build --auto-promote @fmt
 	opam lint
 	git ls-files '**/*.[ch]' | xargs -n1 indent -nut -i8
+
+%.mli: %.ml
+	dune exec -- ocaml-print-intf $< 

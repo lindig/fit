@@ -8,11 +8,6 @@ let ( >> ) = Int.shift_right
 
 let fail_with fmt = Printf.kprintf (fun msg -> fail msg) fmt
 
-let read path =
-  let ic = open_in path in
-  defer (fun () -> close_in ic) @@ fun () ->
-  really_input_string ic (in_channel_length ic)
-
 type arch = BE  (** Big Endian *) | LE  (** Little Endian *)
 
 module Dict = Map.Make (Int)
@@ -63,15 +58,19 @@ module Type = struct
     count n field >>= fun fields -> return { msg; arch; fields }
 end
 
+type header = { protocol : int; profile : int; length : int }
+
 type value =
   | Enum of int
   | String of string
   | Int of int
   | Int32 of int32
   | Float of float
-  | Dummy
+  | Unknown
 
 type record = { msg : int; fields : (int * value) list }
+
+type t = { header : header; records : record list }
 
 let base arch ty =
   match (arch, ty.Type.ty) with
@@ -92,7 +91,7 @@ let base arch ty =
   | LE, Type.Float 32 -> LE.any_float >>= fun x -> return @@ Float x
   | BE, Type.Float 64 -> BE.any_double >>= fun x -> return @@ Float x
   | LE, Type.Float 64 -> LE.any_double >>= fun x -> return @@ Float x
-  | _, _ -> advance ty.Type.size *> return Dummy
+  | _, _ -> advance ty.Type.size *> return Unknown
 
 let record arch ty =
   let rec loop vs = function
@@ -102,8 +101,6 @@ let record arch ty =
   loop [] ty.Type.fields
 
 module File = struct
-  type header = { protocol : int; profile : int; length : int }
-
   let header =
     any_int8 >>= function
     | (12 | 14) as size ->
@@ -143,5 +140,14 @@ module File = struct
   let read =
     let xx = (Dict.empty, []) in
     header >>= fun h ->
-    pos >>= fun offset -> blocks xx (h.length + offset)
+    pos >>= fun offset ->
+    blocks xx (h.length + offset) >>= fun (_, recs) ->
+    return { header = h; records = recs }
 end
+
+let read_file path =
+  let ic = open_in path in
+  defer (fun () -> close_in ic) @@ fun () ->
+  really_input_string ic (in_channel_length ic)
+
+let read path = read_file path |> parse_string File.read
