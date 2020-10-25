@@ -63,45 +63,43 @@ module Type = struct
     count n field >>= fun fields -> return { msg; arch; fields }
 end
 
-module Value = struct
-  type base =
-    | Enum of int
-    | String of string
-    | Int of int
-    | Int32 of int32
-    | Float of float
-    | Dummy
+type value =
+  | Enum of int
+  | String of string
+  | Int of int
+  | Int32 of int32
+  | Float of float
+  | Dummy
 
-  type record = { msg : int; fields : (int * base) list }
+type record = { msg : int; fields : (int * value) list }
 
-  let base arch ty =
-    match (arch, ty.Type.ty) with
-    | _, Type.Enum -> any_uint8 >>= fun x -> return @@ Enum x
-    | _, Type.Bytes -> take ty.Type.size >>= fun x -> return @@ String x
-    | _, Type.String -> take ty.Type.size >>= fun x -> return @@ String x
-    | _, Type.Int (Signed, 8) -> any_int8 >>= fun x -> return @@ Int x
-    | BE, Type.Int (Signed, 16) -> BE.any_int16 >>= fun x -> return @@ Int x
-    | LE, Type.Int (Signed, 16) -> LE.any_int16 >>= fun x -> return @@ Int x
-    | BE, Type.Int (Signed, 32) -> BE.any_int32 >>= fun x -> return @@ Int32 x
-    | LE, Type.Int (Signed, 32) -> LE.any_int32 >>= fun x -> return @@ Int32 x
-    | _, Type.Int (Unsigned, 8) -> any_uint8 >>= fun x -> return @@ Int x
-    | LE, Type.Int (Unsigned, 16) -> LE.any_uint16 >>= fun x -> return @@ Int x
-    | BE, Type.Int (Unsigned, 16) -> BE.any_uint16 >>= fun x -> return @@ Int x
-    | LE, Type.Int (Unsigned, 32) -> LE.any_int32 >>= fun x -> return @@ Int32 x
-    | BE, Type.Int (Unsigned, 32) -> BE.any_int32 >>= fun x -> return @@ Int32 x
-    | BE, Type.Float 32 -> BE.any_float >>= fun x -> return @@ Float x
-    | LE, Type.Float 32 -> LE.any_float >>= fun x -> return @@ Float x
-    | BE, Type.Float 64 -> BE.any_double >>= fun x -> return @@ Float x
-    | LE, Type.Float 64 -> LE.any_double >>= fun x -> return @@ Float x
-    | _, _ -> advance ty.Type.size *> return Dummy
+let base arch ty =
+  match (arch, ty.Type.ty) with
+  | _, Type.Enum -> any_uint8 >>= fun x -> return @@ Enum x
+  | _, Type.Bytes -> take ty.Type.size >>= fun x -> return @@ String x
+  | _, Type.String -> take ty.Type.size >>= fun x -> return @@ String x
+  | _, Type.Int (Signed, 8) -> any_int8 >>= fun x -> return @@ Int x
+  | BE, Type.Int (Signed, 16) -> BE.any_int16 >>= fun x -> return @@ Int x
+  | LE, Type.Int (Signed, 16) -> LE.any_int16 >>= fun x -> return @@ Int x
+  | BE, Type.Int (Signed, 32) -> BE.any_int32 >>= fun x -> return @@ Int32 x
+  | LE, Type.Int (Signed, 32) -> LE.any_int32 >>= fun x -> return @@ Int32 x
+  | _, Type.Int (Unsigned, 8) -> any_uint8 >>= fun x -> return @@ Int x
+  | LE, Type.Int (Unsigned, 16) -> LE.any_uint16 >>= fun x -> return @@ Int x
+  | BE, Type.Int (Unsigned, 16) -> BE.any_uint16 >>= fun x -> return @@ Int x
+  | LE, Type.Int (Unsigned, 32) -> LE.any_int32 >>= fun x -> return @@ Int32 x
+  | BE, Type.Int (Unsigned, 32) -> BE.any_int32 >>= fun x -> return @@ Int32 x
+  | BE, Type.Float 32 -> BE.any_float >>= fun x -> return @@ Float x
+  | LE, Type.Float 32 -> LE.any_float >>= fun x -> return @@ Float x
+  | BE, Type.Float 64 -> BE.any_double >>= fun x -> return @@ Float x
+  | LE, Type.Float 64 -> LE.any_double >>= fun x -> return @@ Float x
+  | _, _ -> advance ty.Type.size *> return Dummy
 
-  let record arch ty =
-    let rec loop vs = function
-      | [] -> return { msg = ty.Type.msg; fields = List.rev vs }
-      | t :: ts -> base arch t >>= fun v -> loop ((t.Type.pos, v) :: vs) ts
-    in
-    loop [] ty.Type.fields
-end
+let record arch ty =
+  let rec loop vs = function
+    | [] -> return { msg = ty.Type.msg; fields = List.rev vs }
+    | t :: ts -> base arch t >>= fun v -> loop ((t.Type.pos, v) :: vs) ts
+  in
+  loop [] ty.Type.fields
 
 module File = struct
   type header = { protocol : int; profile : int; length : int }
@@ -127,14 +125,14 @@ module File = struct
         match Dict.find_opt key dict with
         | Some ty ->
             let arch = ty.arch in
-            Value.record arch ty >>= fun r -> return (dict, r :: rs)
+            record arch ty >>= fun r -> return (dict, r :: rs)
         | None -> fail_with "can't find type for key %d" key )
     | _ when tag &. 0b1000_0000 <> 0 -> (
         let key = tag &. 0b0110_0000 >> 5 in
         match Dict.find_opt key dict with
         | Some ty ->
             let arch = ty.arch in
-            Value.record arch ty >>= fun r -> return (dict, r :: rs)
+            record arch ty >>= fun r -> return (dict, r :: rs)
         | None -> fail_with "can't find type for key %d" key )
     | n -> fail_with "unexpected block with tag %x" n
 
