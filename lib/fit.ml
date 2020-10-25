@@ -108,7 +108,7 @@ module File = struct
         LE.any_int16 >>= fun profile ->
         LE.any_int32 >>= fun length ->
         string ".FIT"
-        *> (if size = 14 then advance 2 else advance 0)
+        *> (if size = 14 then advance 2 (* skip CRC *) else advance 0)
         *> return { protocol; profile; length = Int32.to_int length }
     | n -> fail_with "found unexpected header of size %d" n
 
@@ -117,14 +117,22 @@ module File = struct
     let key = byte &. 0b0000_1111 in
     let tag = byte &. 0b1111_0000 in
     match tag with
-    | 0b0100_0000 -> Type.record >>= fun d -> return (Dict.add key d dict, rs)
+    | 0b0100_0000 ->
+        (* This is a block that defines a type - add it to the dict *)
+        Type.record >>= fun d -> return (Dict.add key d dict, rs)
     | 0b0000_0000 -> (
+        (* This is a block holding values. Its shape is defined by the
+           type it refers to and which we must have read earlier and
+           should find in the dictionary *)
         match Dict.find_opt key dict with
         | Some ty ->
             let arch = ty.arch in
             record arch ty >>= fun r -> return (dict, r :: rs)
         | None -> fail_with "can't find type for key %d" key )
     | _ when tag &. 0b1000_0000 <> 0 -> (
+        (* this is a compressed header for a value block that includes a
+           timestamp. We ignore the timestamp and only read the other
+           fields. *)
         let key = tag &. 0b0110_0000 >> 5 in
         match Dict.find_opt key dict with
         | Some ty ->
