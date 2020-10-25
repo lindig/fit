@@ -18,7 +18,7 @@ module Type = struct
   type base = Enum | Bytes | String | Int of sign * int | Float of int
 
   type field = {
-      pos : int  (** position within record - defines purpose *)
+      slot : int  (** position within record - defines purpose *)
     ; size : int  (** in bytes *)
     ; ty : base  (** representation *)
   }
@@ -27,7 +27,7 @@ module Type = struct
 
   (** parse a [field] definition from a FIT file *)
   let field =
-    any_uint8 >>= fun pos ->
+    any_uint8 >>= fun slot ->
     any_uint8 >>= fun size ->
     any_uint8 >>= fun ty' ->
     let ty =
@@ -45,7 +45,7 @@ module Type = struct
       | 13 -> Bytes
       | _ -> failwith "unknown field base type"
     in
-    return { pos; size; ty }
+    return { slot; size; ty }
 
   let record =
     (int8 0 *> any_int8 >>= function
@@ -96,7 +96,7 @@ let base arch ty =
 let record arch ty =
   let rec loop vs = function
     | [] -> return { msg = ty.Type.msg; fields = List.rev vs }
-    | t :: ts -> base arch t >>= fun v -> loop ((t.Type.pos, v) :: vs) ts
+    | t :: ts -> base arch t >>= fun v -> loop ((t.Type.slot, v) :: vs) ts
   in
   loop [] ty.Type.fields
 
