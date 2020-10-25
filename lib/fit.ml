@@ -150,4 +150,7 @@ let read_file path =
   defer (fun () -> close_in ic) @@ fun () ->
   really_input_string ic (in_channel_length ic)
 
-let read path = read_file path |> parse_string File.read
+let read path =
+  try read_file path |> parse_string File.read
+  with e ->
+    Error (Printf.sprintf "Can't process %s: %s" path (Printexc.to_string e))
