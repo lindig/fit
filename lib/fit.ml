@@ -151,6 +151,7 @@ let read_file path =
   really_input_string ic (in_channel_length ic)
 
 let read path =
-  try read_file path |> parse_string File.read
+  let consume = Consume.Prefix in
+  try read_file path |> parse_string ~consume File.read
   with e ->
     Error (Printf.sprintf "Can't process %s: %s" path (Printexc.to_string e))
