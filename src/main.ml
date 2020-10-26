@@ -14,11 +14,11 @@ let value = function
 let field (pos, v) = (string_of_int pos, value v)
 
 let record r =
-  `O (("msg", `String (string_of_int r.F.msg)) :: List.rev_map field r.F.fields)
+  `O (("msg", `String (string_of_int r.F.msg)) :: List.map field r.F.fields)
 
 let fit name =
   let fit = Fit.read name |> R.get_ok in
-  let json = `A (List.map record fit.F.records) in
+  let json = `A (List.rev_map record fit.F.records) in
   J.to_channel ~minify:false stdout json
 
 module Command = struct
