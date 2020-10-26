@@ -37,6 +37,10 @@ Values are further scaled and shifted, which is also defined in the
 protocol, and this transformation is not (yet) implemented in the
 library.
 
+# Resources
+
+* https://developer.garmin.com/fit/protocol/
+* https://www.pinns.co.uk/osm/fit-for-dummies.html
 # Contribute
 
 If you find this useful, please contribute back by raising pull

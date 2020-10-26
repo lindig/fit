@@ -128,7 +128,7 @@ module File = struct
         | Some ty ->
             let arch = ty.arch in
             record arch ty >>= fun r -> return (dict, r :: rs)
-        | None -> fail_with "can't find type for key %d" key )
+        | None -> fail_with "corrupted file? can't find type for key %d" key )
     | _ when tag &. 0b1000_0000 <> 0 -> (
         (* this is a compressed header for a value block that includes a
            timestamp. We ignore the timestamp and only read the other
@@ -138,7 +138,7 @@ module File = struct
         | Some ty ->
             let arch = ty.arch in
             record arch ty >>= fun r -> return (dict, r :: rs)
-        | None -> fail_with "can't find type for key %d" key )
+        | None -> fail_with "corrupted file? Can't find type for key %d" key )
     | n -> fail_with "unexpected block with tag %x" n
 
   let rec blocks xx finish =
@@ -147,10 +147,10 @@ module File = struct
 
   let read =
     let xx = (Dict.empty, []) in
-    header >>= fun h ->
+    header >>= fun header ->
     pos >>= fun offset ->
-    blocks xx (h.length + offset) >>= fun (_, recs) ->
-    return { header = h; records = recs }
+    blocks xx (header.length + offset) >>= fun (_, records) ->
+    return { header; records }
 end
 
 let read_file path =
