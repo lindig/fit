@@ -37,6 +37,40 @@ Values are further scaled and shifted, which is also defined in the
 protocol, and this transformation is not (yet) implemented in the
 library.
 
+# CLI
+
+The `fit` command emits the data to stdout in JSON format. I am using
+this currently for inspecting FIT files. The FIT file in `data/` is from
+a bike computer.
+
+    $ fit data/xpress-4x-2020-10-17.fit | head -25
+    [
+      {
+        "msg": "0",
+        "3": 5122,
+        "4": 971850094,
+        "1": 267,
+        "2": 1803,
+        "5": 0,
+        "0": 4
+      },
+      {
+        "msg": "68",
+        "0": 17,
+        "1": 1,
+        "2": 0,
+        "3": 10,
+        "4": 255,
+        "5": 0,
+        "6": 0,
+        "7": 0,
+        "8": 232,
+        "9": 0,
+        "10": 60,
+        "11": 19693
+      },
+      ...
+
 # Resources
 
 * https://developer.garmin.com/fit/protocol/
