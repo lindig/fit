@@ -24,7 +24,15 @@ let fit name =
 module Command = struct
   let help =
     [
-      `P "These options are common to all commands."
+      `P {|Read a binary FIT file and emit it as JSON to stdout.|}
+    ; `P
+        {|Values
+           in FIT files are often scaled. Currently no scaling is
+           implemented and the values are reported raw as they are read
+           from the binary. The meaning of fields in a record depend 
+           on the message number of the record, which is defined by 
+           the FIT protocol. Currently the $(mname) command has no knowledge
+           about these.  |}
     ; `S "MORE HELP"
     ; `P "Use `$(mname) $(i,COMMAND) --help' for help on a single command."
     ; `S "BUGS"
@@ -34,10 +42,10 @@ module Command = struct
   let path =
     C.Arg.(
       value & pos 0 file "file.fit"
-      & info [] ~docv:"FILE" ~doc:"FIT file to process")
+      & info [] ~docv:"file.fit" ~doc:"FIT file to process.")
 
   let fit =
-    let doc = "Process FIT file" in
+    let doc = "process FIT file" in
     C.Term.(const fit $ path, info "fit" ~doc ~man:help)
 end
 
