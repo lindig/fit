@@ -4,12 +4,12 @@ module J = Ezjsonm
 module F = Fit
 
 let value = function
-  | F.Enum n -> `Float (Float.of_int n)
-  | F.String s -> `String s
-  | F.Int i -> `Float (Float.of_int i)
+  | F.Enum n    -> `Float (Float.of_int n)
+  | F.String s  -> `String s
+  | F.Int i     -> `Float (Float.of_int i)
   | F.Int32 i32 -> `Float (Int32.to_float i32)
-  | F.Float f -> `Float f
-  | F.Unknown -> `Null
+  | F.Float f   -> `Float f
+  | F.Unknown   -> `Null
 
 let field (pos, v) = (string_of_int pos, value v)
 

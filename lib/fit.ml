@@ -32,18 +32,18 @@ module Type = struct
     any_uint8 >>= fun ty' ->
     let ty =
       match ty' &. 0b1111 with
-      | 0 -> Enum
-      | 1 -> Int (Signed, 8)
+      | 0      -> Enum
+      | 1      -> Int (Signed, 8)
       | 2 | 10 -> Int (Unsigned, 8)
-      | 3 -> Int (Signed, 16)
+      | 3      -> Int (Signed, 16)
       | 4 | 11 -> Int (Unsigned, 16)
-      | 5 -> Int (Signed, 32)
+      | 5      -> Int (Signed, 32)
       | 6 | 12 -> Int (Unsigned, 32)
-      | 7 -> String
-      | 8 -> Float 32
-      | 9 -> Float 64
-      | 13 -> Bytes
-      | _ -> failwith "unknown field base type"
+      | 7      -> String
+      | 8      -> Float 32
+      | 9      -> Float 64
+      | 13     -> Bytes
+      | _      -> failwith "unknown field base type"
     in
     return { slot; size; ty }
 
@@ -95,7 +95,7 @@ let base arch ty =
 
 let record arch ty =
   let rec loop vs = function
-    | [] -> return { msg = ty.Type.msg; fields = List.rev vs }
+    | []      -> return { msg = ty.Type.msg; fields = List.rev vs }
     | t :: ts -> base arch t >>= fun v -> loop ((t.Type.slot, v) :: vs) ts
   in
   loop [] ty.Type.fields
@@ -110,7 +110,7 @@ module File = struct
         string ".FIT"
         *> (if size = 14 then advance 2 (* skip CRC *) else advance 0)
         *> return { protocol; profile; length = Int32.to_int length }
-    | n -> fail_with "found unexpected header of size %d" n
+    | n                 -> fail_with "found unexpected header of size %d" n
 
   let block (dict, rs) =
     any_int8 >>= fun byte ->
@@ -128,7 +128,8 @@ module File = struct
         | Some ty ->
             let arch = ty.arch in
             record arch ty >>= fun r -> return (dict, r :: rs)
-        | None -> fail_with "corrupted file? can't find type for key %d" key )
+        | None    -> fail_with "corrupted file? can't find type for key %d" key
+        )
     | _ when tag &. 0b1000_0000 <> 0 -> (
         (* this is a compressed header for a value block that includes a
            timestamp. We ignore the timestamp and only read the other
@@ -138,7 +139,8 @@ module File = struct
         | Some ty ->
             let arch = ty.arch in
             record arch ty >>= fun r -> return (dict, r :: rs)
-        | None -> fail_with "corrupted file? Can't find type for key %d" key )
+        | None    -> fail_with "corrupted file? Can't find type for key %d" key
+        )
     | n -> fail_with "unexpected block with tag %x" n
 
   let rec blocks xx finish =
