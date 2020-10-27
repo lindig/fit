@@ -2,7 +2,8 @@ open Angstrom
 
 let defer f = Fun.protect ~finally:f
 
-let ( &. ) = Int.logand
+(** redefine & as bitwise operation, && is still logical and *)
+let ( & ) = Int.logand
 
 let ( >> ) = Int.shift_right
 
@@ -31,7 +32,7 @@ module Type = struct
     any_uint8 >>= fun size ->
     any_uint8 >>= fun ty' ->
     let ty =
-      match ty' &. 0b1111 with
+      match ty' & 0b1111 with
       | 0      -> Enum
       | 1      -> Int (Signed, 8)
       | 2 | 10 -> Int (Unsigned, 8)
@@ -114,8 +115,8 @@ module File = struct
 
   let block (dict, rs) =
     any_int8 >>= fun byte ->
-    let key = byte &. 0b0000_1111 in
-    let tag = byte &. 0b1111_0000 in
+    let key = byte & 0b0000_1111 in
+    let tag = byte & 0b1111_0000 in
     match tag with
     | 0b0100_0000 ->
         (* This is a block that defines a type - add it to the dict *)
@@ -130,11 +131,11 @@ module File = struct
             record arch ty >>= fun r -> return (dict, r :: rs)
         | None    -> fail_with "corrupted file? can't find type for key %d" key
         )
-    | _ when tag &. 0b1000_0000 <> 0 -> (
+    | _ when (tag & 0b1000_0000) <> 0 -> (
         (* this is a compressed header for a value block that includes a
            timestamp. We ignore the timestamp and only read the other
            fields. *)
-        let key = tag &. 0b0110_0000 >> 5 in
+        let key = (tag & 0b0110_0000) >> 5 in
         match Dict.find_opt key dict with
         | Some ty ->
             let arch = ty.arch in
