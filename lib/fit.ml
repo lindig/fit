@@ -156,6 +156,23 @@ module File = struct
     return { header; records }
 end
 
+module JSON = struct
+  let value = function
+    | Enum n    -> `Float (Float.of_int n)
+    | String s  -> `String s
+    | Int i     -> `Float (Float.of_int i)
+    | Int32 i32 -> `Float (Int32.to_float i32)
+    | Float f   -> `Float f
+    | Unknown   -> `Null
+
+  let field (pos, v) = (string_of_int pos, value v)
+
+  let record r =
+    `O (("msg", `String (string_of_int r.msg)) :: List.map field r.fields)
+end
+
+let to_json fit = `A (List.rev_map JSON.record fit.records)
+
 let read_file path =
   let ic = open_in path in
   defer (fun () -> close_in ic) @@ fun () ->

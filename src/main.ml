@@ -3,23 +3,8 @@ module C = Cmdliner
 module J = Ezjsonm
 module F = Fit
 
-let value = function
-  | F.Enum n    -> `Float (Float.of_int n)
-  | F.String s  -> `String s
-  | F.Int i     -> `Float (Float.of_int i)
-  | F.Int32 i32 -> `Float (Int32.to_float i32)
-  | F.Float f   -> `Float f
-  | F.Unknown   -> `Null
-
-let field (pos, v) = (string_of_int pos, value v)
-
-let record r =
-  `O (("msg", `String (string_of_int r.F.msg)) :: List.map field r.F.fields)
-
 let fit name =
-  let fit = Fit.read name |> R.get_ok in
-  let json = `A (List.rev_map record fit.F.records) in
-  J.to_channel ~minify:false stdout json
+  Fit.read name |> R.get_ok |> Fit.to_json |> J.to_channel ~minify:false stdout
 
 module Command = struct
   let help =

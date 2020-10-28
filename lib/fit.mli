@@ -29,3 +29,5 @@ type t = { header : header; records : record list }
 
 val read : string -> (t, string) result
 (** [read path] reads a FIT file from [path] in the file system. *)
+
+val to_json : t -> Ezjsonm.t
