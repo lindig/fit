@@ -156,6 +156,51 @@ module File = struct
     return { header; records }
 end
 
+module MSG = struct
+  let add map (k, v) = Dict.add k v map
+
+  let msgs =
+    [
+      (0, "file_id")
+    ; (1, "capabilities")
+    ; (2, "device_settings")
+    ; (3, "user_profile")
+    ; (4, "hrm_profile")
+    ; (5, "sdm_profile")
+    ; (6, "bike_profile")
+    ; (7, "zones_target")
+    ; (8, "hr_zone")
+    ; (9, "power_zone")
+    ; (10, "met_zone")
+    ; (12, "sport")
+    ; (15, "goal")
+    ; (18, "session")
+    ; (19, "lap")
+    ; (20, "record")
+    ; (21, "event")
+    ; (23, "device_info")
+    ; (26, "workout")
+    ; (27, "workout_step")
+    ; (30, "weight_scale")
+    ; (31, "course")
+    ; (32, "course_point")
+    ; (33, "totals")
+    ; (34, "activity")
+    ; (35, "software")
+    ; (37, "file_capabilities")
+    ; (38, "mesg_capabilities")
+    ; (39, "field_capabilities")
+    ; (49, "file_creator")
+    ; (51, "blood_pressure")
+    ]
+    |> List.fold_left add Dict.empty
+
+  let lookup key =
+    match Dict.find_opt key msgs with
+    | Some name -> name
+    | None      -> string_of_int key
+end
+
 module JSON = struct
   let value = function
     | Enum n    -> `Float (Float.of_int n)
@@ -168,7 +213,7 @@ module JSON = struct
   let field (pos, v) = (string_of_int pos, value v)
 
   let record r =
-    `O (("msg", `String (string_of_int r.msg)) :: List.map field r.fields)
+    `O (("msg", `String (MSG.lookup r.msg)) :: List.map field r.fields)
 end
 
 let to_json fit = `A (List.rev_map JSON.record fit.records)
