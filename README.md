@@ -34,8 +34,19 @@ the FIT protocol and slots have these meanings:
 * 253 timestamp
 
 Values are further scaled and shifted, which is also defined in the
-protocol, and this transformation is not (yet) implemented in the
-library.
+protocol, and this transformation is only implemented for a few fields
+of the "record" message:
+
+    {
+      "msg": "record",
+      "timestamp": "2020-10-17T06:25:19",
+      "0": 622927716,
+      "1": 1703145,
+      "speed": 2.745,
+      "distance": 277.23,
+      "altitude": -118.8,
+      "temperature": inf
+    }
 
 # CLI
 
