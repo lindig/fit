@@ -1,4 +1,4 @@
 (library
  (name fit)
  (public_name fit)
- (libraries angstrom ezjsonm))
+ (libraries angstrom ISO8601 ezjsonm))

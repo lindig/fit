@@ -201,19 +201,43 @@ module MSG = struct
     | None      -> string_of_int key
 end
 
-module JSON = struct
-  let value = function
-    | Enum n    -> `Float (Float.of_int n)
-    | String s  -> `String s
-    | Int i     -> `Float (Float.of_int i)
-    | Int32 i32 -> `Float (Int32.to_float i32)
-    | Float f   -> `Float f
-    | Unknown   -> `Null
+let timestamp v =
+  let offset = 631065600.0 in
+  match v with
+  | Int32 n ->
+      `String
+        (Int32.to_float n +. offset |> ISO8601.Permissive.string_of_datetime)
+  | _       -> failwith "can't convert timestamp"
 
-  let field (pos, v) = (string_of_int pos, value v)
+let scale scale offset v =
+  let scale = Float.of_int scale in
+  let offset = Float.of_int offset in
+  match v with
+  | Int x   -> `Float ((Float.of_int x /. scale) -. offset)
+  | Float x -> `Float ((x /. scale) -. offset)
+  | Int32 x -> `Float ((Int32.to_float x /. scale) -. offset)
+  | _       -> failwith "can't scale this value"
+
+module JSON = struct
+  let value msg pos v =
+    match (msg, pos, v) with
+    | 20, 2, v        -> ("altitude", scale 5 500 v)
+    | 20, 4, v        -> ("cadence", scale 0 0 v)
+    | 20, 5, v        -> ("distance", scale 100 0 v)
+    | 20, 6, v        -> ("speed", scale 1000 0 v)
+    | 20, 13, v       -> ("temperature", scale 0 0 v)
+    | _, 253, v       -> ("timestamp", timestamp v)
+    | _, _, Enum n    -> (string_of_int pos, `Float (Float.of_int n))
+    | _, _, String s  -> (string_of_int pos, `String s)
+    | _, _, Int i     -> (string_of_int pos, `Float (Float.of_int i))
+    | _, _, Int32 i32 -> (string_of_int pos, `Float (Int32.to_float i32))
+    | _, _, Float f   -> (string_of_int pos, `Float f)
+    | _, _, Unknown   -> (string_of_int pos, `Null)
+
+  let field msg (pos, v) = value msg pos v
 
   let record r =
-    `O (("msg", `String (MSG.lookup r.msg)) :: List.map field r.fields)
+    `O (("msg", `String (MSG.lookup r.msg)) :: List.map (field r.msg) r.fields)
 end
 
 let to_json fit = `A (List.rev_map JSON.record fit.records)

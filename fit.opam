@@ -12,6 +12,7 @@ depends: [
   "angstrom"
   "ezjsonm"
   "rresult"
+  "ISO8601"
 ]
 build: ["dune" "build" "-j" jobs "@install"]
 dev-repo: "git+https://github.com/lindig/fit.git"
