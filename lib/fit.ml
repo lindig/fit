@@ -201,26 +201,32 @@ module MSG = struct
     | None      -> string_of_int key
 end
 
-let timestamp v =
-  let offset = 631065600.0 in
-  match v with
-  | Int32 n ->
-      `String
-        (Int32.to_float n +. offset |> ISO8601.Permissive.string_of_datetime)
-  | _       -> failwith "can't convert timestamp"
-
-let scale scale offset v =
-  let scale = Float.of_int scale in
-  let offset = Float.of_int offset in
-  match v with
-  | Int x   -> `Float ((Float.of_int x /. scale) -. offset)
-  | Float x -> `Float ((x /. scale) -. offset)
-  | Int32 x -> `Float ((Int32.to_float x /. scale) -. offset)
-  | _       -> failwith "can't scale this value"
-
 module JSON = struct
+  let timestamp v =
+    let offset = 631065600.0 in
+    match v with
+    | Int32 n ->
+        `String
+          (Int32.to_float n +. offset |> ISO8601.Permissive.string_of_datetime)
+    | _       -> failwith "can't convert timestamp"
+
+  let scale scale offset v =
+    let scale = Float.of_int scale in
+    let offset = Float.of_int offset in
+    match v with
+    | Int x   -> `Float ((Float.of_int x /. scale) -. offset)
+    | Float x -> `Float ((x /. scale) -. offset)
+    | Int32 x -> `Float ((Int32.to_float x /. scale) -. offset)
+    | _       -> failwith "can't scale this value"
+
+  let latlon = function
+    | Int32 x -> `Float (Int32.to_float x *. 180.0 /. 2147483648.0)
+    | _       -> failwith "can't scale this value"
+
   let value msg pos v =
     match (msg, pos, v) with
+    | 20, 0, v        -> ("latitude", latlon v)
+    | 20, 1, v        -> ("longitude", latlon v)
     | 20, 2, v        -> ("altitude", scale 5 500 v)
     | 20, 4, v        -> ("cadence", scale 0 0 v)
     | 20, 5, v        -> ("distance", scale 100 0 v)
