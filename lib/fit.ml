@@ -208,7 +208,7 @@ module JSON = struct
     | Int32 n ->
         `String
           (Int32.to_float n +. offset |> ISO8601.Permissive.string_of_datetime)
-    | _       -> failwith "can't convert timestamp"
+    | _       -> `Null
 
   let scale scale offset v =
     let scale = Float.of_int scale in
@@ -217,11 +217,11 @@ module JSON = struct
     | Int x   -> `Float ((Float.of_int x /. scale) -. offset)
     | Float x -> `Float ((x /. scale) -. offset)
     | Int32 x -> `Float ((Int32.to_float x /. scale) -. offset)
-    | _       -> failwith "can't scale this value"
+    | _       -> `Null
 
   let latlon = function
     | Int32 x -> `Float (Int32.to_float x *. 180.0 /. 2147483648.0)
-    | _       -> failwith "can't scale this value"
+    | _       -> `Null
 
   let value msg pos v =
     match (msg, pos, v) with
