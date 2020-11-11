@@ -201,6 +201,27 @@ module MSG = struct
     | None      -> string_of_int key
 end
 
+module Decode = struct
+  let timestamp v =
+    let offset = 631065600.0 in
+    match v with
+    | Int32 n -> Int32.to_float n +. offset
+    | _       -> failwith "unexpected value"
+
+  let scale scale offset v =
+    let scale = Float.of_int scale in
+    let offset = Float.of_int offset in
+    match v with
+    | Int x   -> (Float.of_int x /. scale) -. offset
+    | Float x -> (x /. scale) -. offset
+    | Int32 x -> (Int32.to_float x /. scale) -. offset
+    | _       -> failwith "unexpected value"
+
+  let latlon = function
+    | Int32 x -> Int32.to_float x *. 180.0 /. 2147483648.0
+    | _       -> failwith "unexpected value"
+end
+
 module JSON = struct
   let timestamp v =
     let offset = 631065600.0 in
@@ -211,17 +232,9 @@ module JSON = struct
     | _       -> `Null
 
   let scale scale offset v =
-    let scale = Float.of_int scale in
-    let offset = Float.of_int offset in
-    match v with
-    | Int x   -> `Float ((Float.of_int x /. scale) -. offset)
-    | Float x -> `Float ((x /. scale) -. offset)
-    | Int32 x -> `Float ((Int32.to_float x /. scale) -. offset)
-    | _       -> `Null
+    try `Float (Decode.scale scale offset v) with _ -> `Null
 
-  let latlon = function
-    | Int32 x -> `Float (Int32.to_float x *. 180.0 /. 2147483648.0)
-    | _       -> `Null
+  let latlon v = try `Float (Decode.latlon v) with _ -> `Null
 
   let value msg pos v =
     match (msg, pos, v) with
@@ -245,6 +258,35 @@ module JSON = struct
 
   let record r =
     `O (("msg", `String (MSG.lookup r.msg)) :: List.map (field r.msg) r.fields)
+end
+
+module Record = struct
+  type t = {
+      latitude : float option
+    ; longitude : float option
+    ; timestamp : float option
+    ; altitude : float option
+    ; heatrate : float option
+    ; cadence : float option
+    ; distanc : float option
+    ; temperature : float option
+  }
+
+  let _record_20 fields =
+    try
+      Some
+        {
+          latitude = List.assoc_opt 0 fields |> Option.map Decode.latlon
+        ; longitude = List.assoc_opt 1 fields |> Option.map Decode.latlon
+        ; timestamp = List.assoc_opt 253 fields |> Option.map Decode.timestamp
+        ; altitude = List.assoc_opt 2 fields |> Option.map (Decode.scale 5 500)
+        ; heatrate = List.assoc_opt 3 fields |> Option.map (Decode.scale 1 0)
+        ; cadence = List.assoc_opt 4 fields |> Option.map (Decode.scale 1 0)
+        ; distanc = List.assoc_opt 5 fields |> Option.map (Decode.scale 100 0)
+        ; temperature =
+            List.assoc_opt 13 fields |> Option.map (Decode.scale 1 0)
+        }
+    with _ -> None
 end
 
 let to_json fit = `A (List.rev_map JSON.record fit.records)
