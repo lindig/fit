@@ -31,3 +31,18 @@ val read : string -> (t, string) result
 (** [read path] reads a FIT file from [path] in the file system. *)
 
 val to_json : t -> Ezjsonm.t
+
+module Record : sig
+  type t = {
+      latitude : float option
+    ; longitude : float option
+    ; timestamp : float option
+    ; altitude : float option
+    ; heatrate : float option
+    ; cadence : float option
+    ; distanc : float option
+    ; temperature : float option
+  }
+end
+
+val records : t -> Record.t list

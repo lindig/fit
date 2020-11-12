@@ -85,29 +85,37 @@ type t = { header : header; records : record list }
 
 let base arch ty =
   match (arch, ty.Type.ty) with
-  | _, Type.Enum ->
-      any_uint8 >>= fun x -> return (if x = 255 then Unknown else Enum x)
   | _, Type.Bytes -> take ty.Type.size >>= fun x -> return (String x)
   | _, Type.String -> take ty.Type.size >>= fun x -> return (String x)
-  | _, Type.Int (Signed, 8, _) ->
-      any_int8 >>= fun x -> return (if x = 0xFF then Unknown else Int x)
-  | BE, Type.Int (Signed, 16, _) -> BE.any_int16 >>= fun x -> return @@ Int x
-  | LE, Type.Int (Signed, 16, _) -> LE.any_int16 >>= fun x -> return @@ Int x
-  | BE, Type.Int (Signed, 32, _) -> BE.any_int32 >>= fun x -> return @@ Int32 x
-  | LE, Type.Int (Signed, 32, _) -> LE.any_int32 >>= fun x -> return @@ Int32 x
-  | _, Type.Int (Unsigned, 8, _xx) -> any_uint8 >>= fun x -> return @@ Int x
+  | _, Type.Enum -> any_uint8 >>= fun x -> return (Enum x)
+  | _, Type.Int (Signed, 8, _) -> any_int8 >>= fun x -> return (Int x)
+  | BE, Type.Int (Signed, 16, _) -> BE.any_int16 >>= fun x -> return (Int x)
+  | LE, Type.Int (Signed, 16, _) -> LE.any_int16 >>= fun x -> return (Int x)
+  | BE, Type.Int (Signed, 32, _) -> BE.any_int32 >>= fun x -> return (Int32 x)
+  | LE, Type.Int (Signed, 32, _) -> LE.any_int32 >>= fun x -> return (Int32 x)
+  | _, Type.Int (Unsigned, 8, ZZ) ->
+      any_uint8 >>= fun x -> return (if x = 0 then Unknown else Int x)
+  | LE, Type.Int (Unsigned, 16, ZZ) ->
+      LE.any_uint16 >>= fun x -> return (if x = 0 then Unknown else Int x)
+  | BE, Type.Int (Unsigned, 16, ZZ) ->
+      BE.any_uint16 >>= fun x -> return (if x = 0 then Unknown else Int x)
+  | LE, Type.Int (Unsigned, 32, ZZ) ->
+      LE.any_int32 >>= fun x -> return (if x = 0l then Unknown else Int32 x)
+  | BE, Type.Int (Unsigned, 32, ZZ) ->
+      BE.any_int32 >>= fun x -> return (if x = 0l then Unknown else Int32 x)
+  | _, Type.Int (Unsigned, 8, _xx) -> any_uint8 >>= fun x -> return (Int x)
   | LE, Type.Int (Unsigned, 16, _xx) ->
-      LE.any_uint16 >>= fun x -> return @@ Int x
+      LE.any_uint16 >>= fun x -> return (Int x)
   | BE, Type.Int (Unsigned, 16, _xx) ->
-      BE.any_uint16 >>= fun x -> return @@ Int x
+      BE.any_uint16 >>= fun x -> return (Int x)
   | LE, Type.Int (Unsigned, 32, _xx) ->
-      LE.any_int32 >>= fun x -> return @@ Int32 x
+      LE.any_int32 >>= fun x -> return (Int32 x)
   | BE, Type.Int (Unsigned, 32, _xx) ->
-      BE.any_int32 >>= fun x -> return @@ Int32 x
-  | BE, Type.Float 32 -> BE.any_float >>= fun x -> return @@ Float x
-  | LE, Type.Float 32 -> LE.any_float >>= fun x -> return @@ Float x
-  | BE, Type.Float 64 -> BE.any_double >>= fun x -> return @@ Float x
-  | LE, Type.Float 64 -> LE.any_double >>= fun x -> return @@ Float x
+      BE.any_int32 >>= fun x -> return (Int32 x)
+  | BE, Type.Float 32 -> BE.any_float >>= fun x -> return (Float x)
+  | LE, Type.Float 32 -> LE.any_float >>= fun x -> return (Float x)
+  | BE, Type.Float 64 -> BE.any_double >>= fun x -> return (Float x)
+  | LE, Type.Float 64 -> LE.any_double >>= fun x -> return (Float x)
   | _, _ -> advance ty.Type.size *> return Unknown
 
 let record arch ty =
@@ -296,23 +304,30 @@ module Record = struct
 
   let get slot fields decoder = List.assoc_opt slot fields |> Option.map decoder
 
-  let _record_20 fields =
-    try
-      Some
-        {
-          latitude = get 0 fields Decode.latlon
-        ; longitude = get 1 fields Decode.latlon
-        ; timestamp = get 253 fields Decode.timestamp
-        ; altitude = get 2 fields (Decode.scale 5 500)
-        ; heatrate = get 3 fields (Decode.scale 1 0)
-        ; cadence = get 4 fields (Decode.scale 1 0)
-        ; distanc = get 5 fields (Decode.scale 100 0)
-        ; temperature = get 13 fields (Decode.scale 1 0)
-        }
-    with _ -> None
+  let record = function
+    | { msg = 20; fields } -> (
+        try
+          Some
+            {
+              latitude = get 0 fields Decode.latlon
+            ; longitude = get 1 fields Decode.latlon
+            ; timestamp = get 253 fields Decode.timestamp
+            ; altitude = get 2 fields (Decode.scale 5 500)
+            ; heatrate = get 3 fields (Decode.scale 1 0)
+            ; cadence = get 4 fields (Decode.scale 1 0)
+            ; distanc = get 5 fields (Decode.scale 100 0)
+            ; temperature = get 13 fields (Decode.scale 1 0)
+            }
+        with _ -> None )
+    | _                    -> None
 end
 
 let to_json fit = `A (List.rev_map JSON.record fit.records)
+
+let records fit =
+  List.fold_left
+    (fun xs r -> match Record.record r with Some x -> x :: xs | None -> xs)
+    [] fit.records
 
 let read_file path =
   let ic = open_in path in
