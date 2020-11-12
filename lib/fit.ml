@@ -261,6 +261,12 @@ module JSON = struct
 end
 
 module Record = struct
+  (** The messages with tag 20 (called "record") are at the heat of all
+      FIT files as they contain the measurements. These records may
+      contain many different values their presence cannot be expected.
+      This module provides a representation for such records but covers
+      only the most common values and is not comprehensive *)
+
   type t = {
       latitude : float option
     ; longitude : float option
@@ -272,19 +278,20 @@ module Record = struct
     ; temperature : float option
   }
 
+  let get slot fields decoder = List.assoc_opt slot fields |> Option.map decoder
+
   let _record_20 fields =
     try
       Some
         {
-          latitude = List.assoc_opt 0 fields |> Option.map Decode.latlon
-        ; longitude = List.assoc_opt 1 fields |> Option.map Decode.latlon
-        ; timestamp = List.assoc_opt 253 fields |> Option.map Decode.timestamp
-        ; altitude = List.assoc_opt 2 fields |> Option.map (Decode.scale 5 500)
-        ; heatrate = List.assoc_opt 3 fields |> Option.map (Decode.scale 1 0)
-        ; cadence = List.assoc_opt 4 fields |> Option.map (Decode.scale 1 0)
-        ; distanc = List.assoc_opt 5 fields |> Option.map (Decode.scale 100 0)
-        ; temperature =
-            List.assoc_opt 13 fields |> Option.map (Decode.scale 1 0)
+          latitude = get 0 fields Decode.latlon
+        ; longitude = get 1 fields Decode.latlon
+        ; timestamp = get 253 fields Decode.timestamp
+        ; altitude = get 2 fields (Decode.scale 5 500)
+        ; heatrate = get 3 fields (Decode.scale 1 0)
+        ; cadence = get 4 fields (Decode.scale 1 0)
+        ; distanc = get 5 fields (Decode.scale 100 0)
+        ; temperature = get 13 fields (Decode.scale 1 0)
         }
     with _ -> None
 end
