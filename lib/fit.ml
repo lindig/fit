@@ -16,7 +16,14 @@ module Dict = Map.Make (Int)
 module Type = struct
   type sign = Signed | Unsigned
 
-  type base = Enum | Bytes | String | Int of sign * int | Float of int
+  type invalid = ZZ | FF
+
+  type base =
+    | Enum
+    | Bytes
+    | String
+    | Int of sign * int * invalid
+    | Float of int
 
   type field = {
       slot : int  (** position within record - defines purpose *)
@@ -33,18 +40,21 @@ module Type = struct
     any_uint8 >>= fun ty' ->
     let ty =
       match ty' & 0b1111 with
-      | 0      -> Enum
-      | 1      -> Int (Signed, 8)
-      | 2 | 10 -> Int (Unsigned, 8)
-      | 3      -> Int (Signed, 16)
-      | 4 | 11 -> Int (Unsigned, 16)
-      | 5      -> Int (Signed, 32)
-      | 6 | 12 -> Int (Unsigned, 32)
-      | 7      -> String
-      | 8      -> Float 32
-      | 9      -> Float 64
-      | 13     -> Bytes
-      | _      -> failwith "unknown field base type"
+      | 0  -> Enum
+      | 1  -> Int (Signed, 8, FF)
+      | 2  -> Int (Unsigned, 8, FF)
+      | 3  -> Int (Signed, 16, FF)
+      | 4  -> Int (Unsigned, 16, FF)
+      | 5  -> Int (Signed, 32, FF)
+      | 6  -> Int (Unsigned, 32, FF)
+      | 7  -> String
+      | 8  -> Float 32
+      | 9  -> Float 64
+      | 10 -> Int (Unsigned, 8, ZZ)
+      | 11 -> Int (Unsigned, 16, ZZ)
+      | 12 -> Int (Unsigned, 32, ZZ)
+      | 13 -> Bytes
+      | _  -> failwith "unknown field base type"
     in
     return { slot; size; ty }
 
@@ -75,19 +85,25 @@ type t = { header : header; records : record list }
 
 let base arch ty =
   match (arch, ty.Type.ty) with
-  | _, Type.Enum -> any_uint8 >>= fun x -> return @@ Enum x
-  | _, Type.Bytes -> take ty.Type.size >>= fun x -> return @@ String x
-  | _, Type.String -> take ty.Type.size >>= fun x -> return @@ String x
-  | _, Type.Int (Signed, 8) -> any_int8 >>= fun x -> return @@ Int x
-  | BE, Type.Int (Signed, 16) -> BE.any_int16 >>= fun x -> return @@ Int x
-  | LE, Type.Int (Signed, 16) -> LE.any_int16 >>= fun x -> return @@ Int x
-  | BE, Type.Int (Signed, 32) -> BE.any_int32 >>= fun x -> return @@ Int32 x
-  | LE, Type.Int (Signed, 32) -> LE.any_int32 >>= fun x -> return @@ Int32 x
-  | _, Type.Int (Unsigned, 8) -> any_uint8 >>= fun x -> return @@ Int x
-  | LE, Type.Int (Unsigned, 16) -> LE.any_uint16 >>= fun x -> return @@ Int x
-  | BE, Type.Int (Unsigned, 16) -> BE.any_uint16 >>= fun x -> return @@ Int x
-  | LE, Type.Int (Unsigned, 32) -> LE.any_int32 >>= fun x -> return @@ Int32 x
-  | BE, Type.Int (Unsigned, 32) -> BE.any_int32 >>= fun x -> return @@ Int32 x
+  | _, Type.Enum ->
+      any_uint8 >>= fun x -> return (if x = 255 then Unknown else Enum x)
+  | _, Type.Bytes -> take ty.Type.size >>= fun x -> return (String x)
+  | _, Type.String -> take ty.Type.size >>= fun x -> return (String x)
+  | _, Type.Int (Signed, 8, _) ->
+      any_int8 >>= fun x -> return (if x = 0xFF then Unknown else Int x)
+  | BE, Type.Int (Signed, 16, _) -> BE.any_int16 >>= fun x -> return @@ Int x
+  | LE, Type.Int (Signed, 16, _) -> LE.any_int16 >>= fun x -> return @@ Int x
+  | BE, Type.Int (Signed, 32, _) -> BE.any_int32 >>= fun x -> return @@ Int32 x
+  | LE, Type.Int (Signed, 32, _) -> LE.any_int32 >>= fun x -> return @@ Int32 x
+  | _, Type.Int (Unsigned, 8, _xx) -> any_uint8 >>= fun x -> return @@ Int x
+  | LE, Type.Int (Unsigned, 16, _xx) ->
+      LE.any_uint16 >>= fun x -> return @@ Int x
+  | BE, Type.Int (Unsigned, 16, _xx) ->
+      BE.any_uint16 >>= fun x -> return @@ Int x
+  | LE, Type.Int (Unsigned, 32, _xx) ->
+      LE.any_int32 >>= fun x -> return @@ Int32 x
+  | BE, Type.Int (Unsigned, 32, _xx) ->
+      BE.any_int32 >>= fun x -> return @@ Int32 x
   | BE, Type.Float 32 -> BE.any_float >>= fun x -> return @@ Float x
   | LE, Type.Float 32 -> LE.any_float >>= fun x -> return @@ Float x
   | BE, Type.Float 64 -> BE.any_double >>= fun x -> return @@ Float x
