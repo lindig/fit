@@ -103,15 +103,18 @@ let base arch ty =
       LE.any_int32 >>= fun x -> return (if x = 0l then Unknown else Int32 x)
   | BE, Type.Int (Unsigned, 32, ZZ) ->
       BE.any_int32 >>= fun x -> return (if x = 0l then Unknown else Int32 x)
-  | _, Type.Int (Unsigned, 8, _xx) -> any_uint8 >>= fun x -> return (Int x)
-  | LE, Type.Int (Unsigned, 16, _xx) ->
-      LE.any_uint16 >>= fun x -> return (Int x)
-  | BE, Type.Int (Unsigned, 16, _xx) ->
-      BE.any_uint16 >>= fun x -> return (Int x)
-  | LE, Type.Int (Unsigned, 32, _xx) ->
-      LE.any_int32 >>= fun x -> return (Int32 x)
-  | BE, Type.Int (Unsigned, 32, _xx) ->
-      BE.any_int32 >>= fun x -> return (Int32 x)
+  | _, Type.Int (Unsigned, 8, FF) ->
+      any_uint8 >>= fun x -> return (if x = 0xff then Unknown else Int x)
+  | LE, Type.Int (Unsigned, 16, FF) ->
+      LE.any_uint16 >>= fun x -> return (if x = 0xffff then Unknown else Int x)
+  | BE, Type.Int (Unsigned, 16, FF) ->
+      BE.any_uint16 >>= fun x -> return (if x = 0xffff then Unknown else Int x)
+  | LE, Type.Int (Unsigned, 32, FF) ->
+      LE.any_int32 >>= fun x ->
+      return (if x = 0xffffffffl then Unknown else Int32 x)
+  | BE, Type.Int (Unsigned, 32, FF) ->
+      BE.any_int32 >>= fun x ->
+      return (if x = 0xffffffffl then Unknown else Int32 x)
   | BE, Type.Float 32 -> BE.any_float >>= fun x -> return (Float x)
   | LE, Type.Float 32 -> LE.any_float >>= fun x -> return (Float x)
   | BE, Type.Float 64 -> BE.any_double >>= fun x -> return (Float x)
