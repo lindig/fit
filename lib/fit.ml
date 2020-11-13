@@ -316,9 +316,9 @@ module Record = struct
             ; longitude = get 1 fields Decode.latlon
             ; timestamp = get 253 fields Decode.timestamp
             ; altitude = get 2 fields (Decode.scale 5 500)
-            ; heatrate = get 3 fields (Decode.scale 1 0)
+            ; heartrate = get 3 fields (Decode.scale 1 0)
             ; cadence = get 4 fields (Decode.scale 1 0)
-            ; distanc = get 5 fields (Decode.scale 100 0)
+            ; distance = get 5 fields (Decode.scale 100 0)
             ; temperature = get 13 fields (Decode.scale 1 0)
             }
         with _ -> None )
