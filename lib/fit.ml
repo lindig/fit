@@ -299,9 +299,9 @@ module Record = struct
     ; longitude : float option
     ; timestamp : float option
     ; altitude : float option
-    ; heatrate : float option
+    ; heartrate : float option
     ; cadence : float option
-    ; distanc : float option
+    ; distance : float option
     ; temperature : float option
   }
 
