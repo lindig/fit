@@ -82,6 +82,22 @@ a bike computer.
       },
       ...
 
+# Using FIT
+
+This is work in progress and has not been published as an official
+[Opam] package. Consider pinning it to make it available in your local
+Opam installation.
+
+    opam pin add -y git+https://github.com/lindig/fit
+
+Now it is available:
+
+    $ utop -require fit -require rresult
+    utop # open Rresult;;
+    utop # Fit.read "data/xpress-4x-2020-10-17.fit" >>= fun fit ->
+           Fit.to_json |> R.return;;
+
+
 # Resources
 
 * https://developer.garmin.com/fit/protocol/
@@ -92,3 +108,4 @@ If you find this useful, please contribute back by raising pull
 requests for improvements you made.
 
 [OCaml]:  https://www.ocaml.org/
+[Opam]:   https://opam.ocaml.org/
