@@ -3,30 +3,28 @@
 # convenience during development
 #
 
-DUNE 	= dune
-
-.PHONY: all install test clean uninstall format
+.PHONY: all install test clean uninstall format utop
 
 all:
-	$(DUNE) build -p fit
+	dune build -p fit
 
 install: all
-	$(DUNE) install fit
+	dune install fit
 
 uninstall:
-	$(DUNE) uninstall
+	dune uninstall
 
 test:
-	$(DUNE) runtest
+	dune runtest
 
 clean:
-	$(DUNE) clean
+	dune clean
 
 utop:
-	$(DUNE) utop
+	dune utop
 
 format:
-	$(DUNE) build --auto-promote @fmt
+	dune build --auto-promote @fmt
 	opam lint
 	git ls-files '**/*.[ch]' | xargs -n1 indent -nut -i8
 
