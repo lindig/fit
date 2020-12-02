@@ -305,7 +305,11 @@ module Record = struct
     ; temperature : float option
   }
 
-  let get slot fields decoder = List.assoc_opt slot fields |> Option.map decoder
+  (** if decoding fails, we record the field as not present *)
+  let get slot fields decoder =
+    List.assoc_opt slot fields |> function
+    | Some x -> ( try Some (decoder x) with _ -> None )
+    | None   -> None
 
   let record = function
     | { msg = 20; fields } -> (
