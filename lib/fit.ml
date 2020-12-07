@@ -336,13 +336,15 @@ let records fit =
     (fun xs r -> match Record.record r with Some x -> x :: xs | None -> xs)
     [] fit.records
 
-let read_file path =
+let read_file max_size path =
   let ic = open_in path in
   defer (fun () -> close_in ic) @@ fun () ->
-  really_input_string ic (in_channel_length ic)
+  let size = in_channel_length ic in
+  if size > max_size then failwith "input file exceeds maxium size"
+  else really_input_string ic size
 
-let read path =
+let read ?(max_size = 100 * 1024) path =
   let consume = Consume.Prefix in
-  try read_file path |> parse_string ~consume File.read
+  try read_file max_size path |> parse_string ~consume File.read
   with e ->
     Error (Printf.sprintf "Can't process %s: %s" path (Printexc.to_string e))

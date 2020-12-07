@@ -27,8 +27,10 @@ type record = { msg : int; fields : (int * value) list }
 type t = { header : header; records : record list }
 (** A FIT file is a header and a list of records (in reversed order) *)
 
-val read : string -> (t, string) result
-(** [read path] reads a FIT file from [path] in the file system. *)
+val read : ?max_size:int -> string -> (t, string) result
+(** [read path] reads a FIT file from [path] in the file system. The
+    input file must not exceed max_size (100kb by default) to protect
+    against attacks when reading user-provided files *)
 
 val to_json : t -> Ezjsonm.t
 
