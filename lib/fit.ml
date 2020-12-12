@@ -33,6 +33,21 @@ module Type = struct
 
   type record = { msg : int; arch : arch; fields : field list }
 
+  let json { msg; arch; fields } =
+    let f { slot; size; _ } =
+      `O
+        [
+          ("slot", `Float (float_of_int slot))
+        ; ("size", `Float (float_of_int size))
+        ]
+    in
+    `O
+      [
+        ("msg", `Float (float_of_int msg))
+      ; ("arch", `String (match arch with LE -> "LE" | BE -> "BE"))
+      ; ("fields", `A (List.map f fields))
+      ]
+
   (** parse a [field] definition from a FIT file *)
   let field =
     any_uint8 >>= fun slot ->
@@ -129,6 +144,11 @@ let record arch ty =
   loop [] ty.Type.fields
 
 module File = struct
+  let dump dict =
+    Dict.bindings dict
+    |> List.rev_map (fun (k, v) -> (string_of_int k, Type.json v))
+    |> fun x -> `O x |> Ezjsonm.to_channel ~minify:false stderr
+
   let header =
     any_int8 >>= function
     | (12 | 14) as size ->
@@ -156,8 +176,11 @@ module File = struct
         | Some ty ->
             let arch = ty.arch in
             record arch ty >>= fun r -> return (dict, r :: rs)
-        | None    -> fail_with "corrupted file? can't find type for key %d" key
-        )
+        | None    ->
+            pos >>= fun p ->
+            dump dict;
+            fail_with "corrupted file? No type for key=%d offset=%d at %s" key p
+              __LOC__ )
     | _ when (tag & 0b1000_0000) <> 0 -> (
         (* this is a compressed header for a value block that includes a
            timestamp. We ignore the timestamp and only read the other
@@ -167,8 +190,11 @@ module File = struct
         | Some ty ->
             let arch = ty.arch in
             record arch ty >>= fun r -> return (dict, r :: rs)
-        | None    -> fail_with "corrupted file? Can't find type for key %d" key
-        )
+        | None    ->
+            pos >>= fun p ->
+            dump dict;
+            fail_with "corrupted file? No type for key=%d offset=%d at %s" key p
+              __LOC__ )
     | n -> fail_with "unexpected block with tag %x" n
 
   let rec blocks xx finish =
