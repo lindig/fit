@@ -3,6 +3,9 @@ module C = Cmdliner
 module J = Ezjsonm
 module F = Fit
 
+let build =
+  Printf.sprintf "Commit: %s Built on: %s" Build.git_revision Build.build_time
+
 let fit name =
   Fit.read name |> R.get_ok |> Fit.to_json |> J.to_channel ~minify:false stdout
 
@@ -22,6 +25,8 @@ module Command = struct
     ; `P "Use `$(mname) $(i,COMMAND) --help' for help on a single command."
     ; `S "BUGS"
     ; `P "Check bug reports at https://github.com/lindig/fit/issues"
+    ; `S "BUILD DETAILS"
+    ; `P build
     ]
 
   let path =
