@@ -7,7 +7,10 @@ let build =
   Printf.sprintf "Commit: %s Built on: %s" Build.git_revision Build.build_time
 
 let fit name =
-  Fit.read name |> R.get_ok |> Fit.to_json |> J.to_channel ~minify:false stdout
+  Fit.read ~max_size:(1024 * 512) name
+  |> R.reword_error (fun str -> `Msg str)
+  |> R.failwith_error_msg |> Fit.to_json
+  |> J.to_channel ~minify:false stdout
 
 module Command = struct
   let help =
