@@ -39,8 +39,6 @@ module Type = struct
 
   let total fs = fs |> List.map size |> sum
 
-  let record_size r = total r.fields
-
   let json { msg; arch; fields } =
     let f { slot; size; _ } =
       `O
@@ -180,7 +178,6 @@ module File = struct
     | n                 -> fail_with "found unexpected header of size %d" n
 
   let block (dict, rs) =
-    pos >>= fun offset ->
     any_int8 >>= fun byte ->
     let key = byte & 0b0000_1111 in
     let tag = byte & 0b1111_0000 in
