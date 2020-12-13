@@ -80,7 +80,7 @@ module Type = struct
     in
     return { slot; size; ty }
 
-  let record =
+  let record ~dev =
     (int8 0 *> any_int8 >>= function
      | 0 -> return LE
      | 1 -> return BE
@@ -88,7 +88,14 @@ module Type = struct
     >>= fun arch ->
     (match arch with LE -> LE.any_uint16 | BE -> BE.any_uint16) >>= fun msg ->
     any_int8 >>= fun n ->
-    count n field >>= fun fields -> return { msg; arch; fields }
+    count n field >>= fun fields ->
+    let dev_fields =
+      if dev then
+        any_int8 >>= fun n ->
+        count n field >>= fun dev_fields -> return dev_fields
+      else return []
+    in
+    dev_fields >>= fun extra -> return { msg; arch; fields = fields @ extra }
 end
 
 type header = { protocol : int; profile : int; length : int }
@@ -184,7 +191,10 @@ module File = struct
     match tag with
     | 0b0100_0000 ->
         (* This is a block that defines a type - add it to the dict *)
-        Type.record >>= fun d -> return (Dict.add key d dict, rs)
+        Type.record ~dev:false >>= fun d -> return (Dict.add key d dict, rs)
+    | 0b0110_0000 ->
+        (* This is a block that defines a type - add it to the dict *)
+        Type.record ~dev:true >>= fun d -> return (Dict.add key d dict, rs)
     | 0b0000_0000 -> (
         (* This is a block holding values. Its shape is defined by the
            type it refers to and which we must have read earlier and
