@@ -33,6 +33,14 @@ module Type = struct
 
   type record = { msg : int; arch : arch; fields : field list }
 
+  let sum = List.fold_left ( + ) 0
+
+  let size { size; _ } = size
+
+  let total fs = fs |> List.map size |> sum
+
+  let record_size r = total r.fields
+
   let json { msg; arch; fields } =
     let f { slot; size; _ } =
       `O
@@ -46,6 +54,7 @@ module Type = struct
         ("msg", `Float (float_of_int msg))
       ; ("arch", `String (match arch with LE -> "LE" | BE -> "BE"))
       ; ("fields", `A (List.map f fields))
+      ; ("size", `Float (total fields |> float_of_int))
       ]
 
   (** parse a [field] definition from a FIT file *)
@@ -99,42 +108,52 @@ type record = { msg : int; fields : (int * value) list }
 type t = { header : header; records : record list }
 
 let base arch ty =
-  match (arch, ty.Type.ty) with
-  | _, Type.Bytes -> take ty.Type.size >>= fun x -> return (String x)
-  | _, Type.String -> take ty.Type.size >>= fun x -> return (String x)
-  | _, Type.Enum -> any_uint8 >>= fun x -> return (Enum x)
-  | _, Type.Int (Signed, 8, _) -> any_int8 >>= fun x -> return (Int x)
-  | BE, Type.Int (Signed, 16, _) -> BE.any_int16 >>= fun x -> return (Int x)
-  | LE, Type.Int (Signed, 16, _) -> LE.any_int16 >>= fun x -> return (Int x)
-  | BE, Type.Int (Signed, 32, _) -> BE.any_int32 >>= fun x -> return (Int32 x)
-  | LE, Type.Int (Signed, 32, _) -> LE.any_int32 >>= fun x -> return (Int32 x)
-  | _, Type.Int (Unsigned, 8, ZZ) ->
-      any_uint8 >>= fun x -> return (if x = 0 then Unknown else Int x)
-  | LE, Type.Int (Unsigned, 16, ZZ) ->
-      LE.any_uint16 >>= fun x -> return (if x = 0 then Unknown else Int x)
-  | BE, Type.Int (Unsigned, 16, ZZ) ->
-      BE.any_uint16 >>= fun x -> return (if x = 0 then Unknown else Int x)
-  | LE, Type.Int (Unsigned, 32, ZZ) ->
-      LE.any_int32 >>= fun x -> return (if x = 0l then Unknown else Int32 x)
-  | BE, Type.Int (Unsigned, 32, ZZ) ->
-      BE.any_int32 >>= fun x -> return (if x = 0l then Unknown else Int32 x)
-  | _, Type.Int (Unsigned, 8, FF) ->
-      any_uint8 >>= fun x -> return (if x = 0xff then Unknown else Int x)
-  | LE, Type.Int (Unsigned, 16, FF) ->
-      LE.any_uint16 >>= fun x -> return (if x = 0xffff then Unknown else Int x)
-  | BE, Type.Int (Unsigned, 16, FF) ->
-      BE.any_uint16 >>= fun x -> return (if x = 0xffff then Unknown else Int x)
-  | LE, Type.Int (Unsigned, 32, FF) ->
-      LE.any_int32 >>= fun x ->
-      return (if x = 0xffffffffl then Unknown else Int32 x)
-  | BE, Type.Int (Unsigned, 32, FF) ->
-      BE.any_int32 >>= fun x ->
-      return (if x = 0xffffffffl then Unknown else Int32 x)
-  | BE, Type.Float 32 -> BE.any_float >>= fun x -> return (Float x)
-  | LE, Type.Float 32 -> LE.any_float >>= fun x -> return (Float x)
-  | BE, Type.Float 64 -> BE.any_double >>= fun x -> return (Float x)
-  | LE, Type.Float 64 -> LE.any_double >>= fun x -> return (Float x)
-  | _, _ -> advance ty.Type.size *> return Unknown
+  let value =
+    match (arch, ty.Type.ty) with
+    | _, Type.Bytes -> take ty.Type.size >>= fun x -> return (String x)
+    | _, Type.String -> take ty.Type.size >>= fun x -> return (String x)
+    | _, Type.Enum -> any_uint8 >>= fun x -> return (Enum x)
+    | _, Type.Int (Signed, 8, _) -> any_int8 >>= fun x -> return (Int x)
+    | BE, Type.Int (Signed, 16, _) -> BE.any_int16 >>= fun x -> return (Int x)
+    | LE, Type.Int (Signed, 16, _) -> LE.any_int16 >>= fun x -> return (Int x)
+    | BE, Type.Int (Signed, 32, _) -> BE.any_int32 >>= fun x -> return (Int32 x)
+    | LE, Type.Int (Signed, 32, _) -> LE.any_int32 >>= fun x -> return (Int32 x)
+    | _, Type.Int (Unsigned, 8, ZZ) ->
+        any_uint8 >>= fun x -> return (if x = 0 then Unknown else Int x)
+    | LE, Type.Int (Unsigned, 16, ZZ) ->
+        LE.any_uint16 >>= fun x -> return (if x = 0 then Unknown else Int x)
+    | BE, Type.Int (Unsigned, 16, ZZ) ->
+        BE.any_uint16 >>= fun x -> return (if x = 0 then Unknown else Int x)
+    | LE, Type.Int (Unsigned, 32, ZZ) ->
+        LE.any_int32 >>= fun x -> return (if x = 0l then Unknown else Int32 x)
+    | BE, Type.Int (Unsigned, 32, ZZ) ->
+        BE.any_int32 >>= fun x -> return (if x = 0l then Unknown else Int32 x)
+    | _, Type.Int (Unsigned, 8, FF) ->
+        any_uint8 >>= fun x -> return (if x = 0xff then Unknown else Int x)
+    | LE, Type.Int (Unsigned, 16, FF) ->
+        LE.any_uint16 >>= fun x -> return (if x = 0xffff then Unknown else Int x)
+    | BE, Type.Int (Unsigned, 16, FF) ->
+        BE.any_uint16 >>= fun x -> return (if x = 0xffff then Unknown else Int x)
+    | LE, Type.Int (Unsigned, 32, FF) ->
+        LE.any_int32 >>= fun x ->
+        return (if x = 0xffffffffl then Unknown else Int32 x)
+    | BE, Type.Int (Unsigned, 32, FF) ->
+        BE.any_int32 >>= fun x ->
+        return (if x = 0xffffffffl then Unknown else Int32 x)
+    | BE, Type.Float 32 -> BE.any_float >>= fun x -> return (Float x)
+    | LE, Type.Float 32 -> LE.any_float >>= fun x -> return (Float x)
+    | BE, Type.Float 64 -> BE.any_double >>= fun x -> return (Float x)
+    | LE, Type.Float 64 -> LE.any_double >>= fun x -> return (Float x)
+    | _, _ -> advance ty.Type.size *> return Unknown
+  in
+
+  pos >>= fun before ->
+  value >>= fun v ->
+  pos >>= fun after ->
+  let size = after - before in
+  if size < ty.Type.size then
+    advance (ty.Type.size - size) >>= fun _ -> return v
+  else return v
 
 let record arch ty =
   let rec loop vs = function
@@ -144,7 +163,7 @@ let record arch ty =
   loop [] ty.Type.fields
 
 module File = struct
-  let dump dict =
+  let _dump dict =
     Dict.bindings dict
     |> List.rev_map (fun (k, v) -> (string_of_int k, Type.json v))
     |> fun x -> `O x |> Ezjsonm.to_channel ~minify:false stderr
@@ -161,6 +180,7 @@ module File = struct
     | n                 -> fail_with "found unexpected header of size %d" n
 
   let block (dict, rs) =
+    pos >>= fun offset ->
     any_int8 >>= fun byte ->
     let key = byte & 0b0000_1111 in
     let tag = byte & 0b1111_0000 in
@@ -178,7 +198,6 @@ module File = struct
             record arch ty >>= fun r -> return (dict, r :: rs)
         | None    ->
             pos >>= fun p ->
-            dump dict;
             fail_with "corrupted file? No type for key=%d offset=%d at %s" key p
               __LOC__ )
     | _ when (tag & 0b1000_0000) <> 0 -> (
@@ -192,7 +211,6 @@ module File = struct
             record arch ty >>= fun r -> return (dict, r :: rs)
         | None    ->
             pos >>= fun p ->
-            dump dict;
             fail_with "corrupted file? No type for key=%d offset=%d at %s" key p
               __LOC__ )
     | n -> fail_with "unexpected block with tag %x" n
