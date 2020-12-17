@@ -6,7 +6,7 @@
 .PHONY: all install test clean uninstall format utop
 
 all:
-	dune build -p fit
+	dune build
 
 install: all
 	dune install fit
