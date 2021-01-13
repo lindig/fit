@@ -220,7 +220,9 @@ module File = struct
             pos >>= fun p ->
             fail_with "corrupted file? No type for key=%d offset=%d at %s" key p
               __LOC__ )
-    | n -> fail_with "unexpected block with tag %x" n
+    | n ->
+      pos >>= fun p ->
+      fail_with "unexpected block with tag 0x%x at offset %d" n p
 
   let rec blocks xx finish =
     pos >>= fun p ->
