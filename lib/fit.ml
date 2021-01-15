@@ -31,7 +31,12 @@ module Type = struct
     ; ty : base  (** representation *)
   }
 
-  type record = { msg : int; arch : arch; fields : field list }
+  type record = {
+      msg : int
+    ; arch : arch
+    ; fields : field list
+    ; dev_fields : int  (** total size of dev fields *)
+  }
 
   let sum = List.fold_left ( + ) 0
 
@@ -39,7 +44,7 @@ module Type = struct
 
   let total fs = fs |> List.map size |> sum
 
-  let json { msg; arch; fields } =
+  let json { msg; arch; fields; dev_fields } =
     let f { slot; size; _ } =
       `O
         [
@@ -52,7 +57,8 @@ module Type = struct
         ("msg", `Float (float_of_int msg))
       ; ("arch", `String (match arch with LE -> "LE" | BE -> "BE"))
       ; ("fields", `A (List.map f fields))
-      ; ("size", `Float (total fields |> float_of_int))
+      ; ("dev_fields", `Float (float_of_int dev_fields))
+      ; ("size", `Float (total fields + dev_fields |> float_of_int))
       ]
 
   (** parse a [field] definition from a FIT file *)
@@ -95,7 +101,8 @@ module Type = struct
         count n field >>= fun dev_fields -> return dev_fields
       else return []
     in
-    dev_fields >>= fun extra -> return { msg; arch; fields = fields @ extra }
+    dev_fields >>= fun dev_fields ->
+    return { msg; arch; fields; dev_fields = total dev_fields }
 end
 
 type header = { protocol : int; profile : int; length : int }
@@ -136,9 +143,11 @@ let base arch ty =
     | _, Type.Int (Unsigned, 8, FF) ->
         any_uint8 >>= fun x -> return (if x = 0xff then Unknown else Int x)
     | LE, Type.Int (Unsigned, 16, FF) ->
-        LE.any_uint16 >>= fun x -> return (if x = 0xffff then Unknown else Int x)
+        LE.any_uint16 >>= fun x ->
+        return (if x = 0xffff then Unknown else Int x)
     | BE, Type.Int (Unsigned, 16, FF) ->
-        BE.any_uint16 >>= fun x -> return (if x = 0xffff then Unknown else Int x)
+        BE.any_uint16 >>= fun x ->
+        return (if x = 0xffff then Unknown else Int x)
     | LE, Type.Int (Unsigned, 32, FF) ->
         LE.any_int32 >>= fun x ->
         return (if x = 0xffffffffl then Unknown else Int32 x)
@@ -165,7 +174,9 @@ let record arch ty =
     | []      -> return { msg = ty.Type.msg; fields = List.rev vs }
     | t :: ts -> base arch t >>= fun v -> loop ((t.Type.slot, v) :: vs) ts
   in
-  loop [] ty.Type.fields
+  loop [] ty.Type.fields >>= fun result ->
+  (* skip over developer fields *)
+  advance ty.Type.dev_fields *> return result
 
 module File = struct
   let _dump dict =
@@ -185,17 +196,21 @@ module File = struct
     | n                 -> fail_with "found unexpected header of size %d" n
 
   let block (dict, rs) =
+    pos >>= fun p ->
     any_int8 >>= fun byte ->
     let key = byte & 0b0000_1111 in
     let tag = byte & 0b1111_0000 in
     match tag with
     | 0b0100_0000 ->
+        (* Printf.eprintf "%06x tag=0x%x key=%d\n" p tag key; *)
         (* This is a block that defines a type - add it to the dict *)
         Type.record ~dev:false >>= fun d -> return (Dict.add key d dict, rs)
     | 0b0110_0000 ->
+        (* Printf.eprintf "%06x tag=0x%x key=%d\n" p tag key; *)
         (* This is a block that defines a type - add it to the dict *)
         Type.record ~dev:true >>= fun d -> return (Dict.add key d dict, rs)
     | 0b0000_0000 -> (
+        (* Printf.eprintf "%06x tag=0x%x key=%d\n" p tag key; *)
         (* This is a block holding values. Its shape is defined by the
            type it refers to and which we must have read earlier and
            should find in the dictionary *)
@@ -206,8 +221,9 @@ module File = struct
         | None    ->
             pos >>= fun p ->
             fail_with "corrupted file? No type for key=%d offset=%d at %s" key p
-              __LOC__ )
+              __LOC__)
     | _ when (tag & 0b1000_0000) <> 0 -> (
+        (* Printf.eprintf "%06x tag=0x%x key=%d\n" p tag key; *)
         (* this is a compressed header for a value block that includes a
            timestamp. We ignore the timestamp and only read the other
            fields. *)
@@ -219,10 +235,11 @@ module File = struct
         | None    ->
             pos >>= fun p ->
             fail_with "corrupted file? No type for key=%d offset=%d at %s" key p
-              __LOC__ )
+              __LOC__)
     | n ->
-      pos >>= fun p ->
-      fail_with "unexpected block with tag 0x%x at offset %d" n p
+        (* Printf.eprintf "%06x tag=0x%x key=%d\n" p tag key; *)
+        (* _dump dict; *)
+        fail_with "unexpected block with tag 0x%x at offset %d" n p
 
   let rec blocks xx finish =
     pos >>= fun p ->
@@ -361,7 +378,7 @@ module Record = struct
   (** if decoding fails, we record the field as not present *)
   let get slot fields decoder =
     List.assoc_opt slot fields |> function
-    | Some x -> ( try Some (decoder x) with _ -> None )
+    | Some x -> ( try Some (decoder x) with _ -> None)
     | None   -> None
 
   let record = function
@@ -378,7 +395,7 @@ module Record = struct
             ; distance = get 5 fields (Decode.scale 100 0)
             ; temperature = get 13 fields (Decode.scale 1 0)
             }
-        with _ -> None )
+        with _ -> None)
     | _                    -> None
 end
 
