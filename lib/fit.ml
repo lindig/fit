@@ -371,6 +371,7 @@ module Record = struct
     ; altitude : float option
     ; heartrate : float option
     ; cadence : float option
+    ; speed : float option
     ; distance : float option
     ; temperature : float option
   }
@@ -394,6 +395,7 @@ module Record = struct
             ; cadence = get 4 fields (Decode.scale 1 0)
             ; distance = get 5 fields (Decode.scale 100 0)
             ; temperature = get 13 fields (Decode.scale 1 0)
+            ; speed = get 6 fields (Decode.scale 1000 0)
             }
         with _ -> None)
     | _                    -> None

@@ -42,6 +42,7 @@ module Record : sig
     ; altitude : float option
     ; heartrate : float option
     ; cadence : float option
+    ; speed : float option
     ; distance : float option
     ; temperature : float option
   }
