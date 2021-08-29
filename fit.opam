@@ -7,7 +7,8 @@ license: "MIT"
 homepage: "https://github.com/lindig/fit"
 bug-reports: "https://github.com/lindig/fit/issues"
 depends: [
-  "dune" {build}
+  "ocaml" { >= "4.08.0" }
+  "dune" { >= "2.0" }
   "cmdliner"
   "angstrom"
   "ezjsonm"
