@@ -10,7 +10,7 @@ depends: [
   "ocaml" { >= "4.08.0" }
   "dune" { >= "2.0" }
   "cmdliner"
-  "angstrom"
+  "angstrom" { >= "0.12.1" }
   "ezjsonm"
   "rresult"
   "ISO8601"
