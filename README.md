@@ -5,8 +5,9 @@
 # FIT
 
 This is a minimal [OCaml] project to parse FIT files as they are
-produced by personal fitness devices. FIT is a binary format that groups
-basic values in records, which typically include a timestamp.
+produced by personal fitness devices. FIT is a binary format invented by
+Garmin that groups basic values in records, which typically include a
+timestamp.
 
     {
       "msg": "20",
@@ -50,9 +51,10 @@ of the "record" message:
 
 # CLI
 
-The `fit` command emits the data to stdout in JSON format. I am using
-this currently for inspecting FIT files. The FIT file in `data/` is from
-a bike computer.
+This code is primarily intended as a library but it also provides a
+small binary. The `fit` command emits the data to stdout in JSON format.
+I am using this currently for inspecting FIT files. The FIT file in
+`data/` is from a bike computer.
 
     $ fit data/xpress-4x-2020-10-17.fit | head -25
     [
@@ -82,15 +84,18 @@ a bike computer.
       },
       ...
 
-# Using FIT
+# Installing FIT
 
-This is work in progress and has not been published as an official
-[Opam] package. Consider pinning it to make it available in your local
-Opam installation.
+Version 1.0.1 has been published as an Opam package such that it can be
+installed from Opam:
+
+    opam install fit
+
+You can also pin it directly for access to unpublished changes:
 
     opam pin add -y git+https://github.com/lindig/fit
 
-Now it is available:
+Once installed, you can use it:
 
     $ utop -require fit -require rresult
     utop # open Rresult;;
