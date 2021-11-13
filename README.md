@@ -20,10 +20,10 @@ timestamp.
       "253": 971857351
     }
 
-Each record has a global message number (20) which defines the purpose
+Each record has a global message number (like 20) which defines the purpose
 of the record and a number of values in position slots. The meaning of
 these is defined in the FIT Protocol but this library (so far) only
-implements the parsing. For example, 20 message is called _record_ in
+implements the parsing. For example, message 20 is called _record_ in
 the FIT protocol and slots have these meanings:
 
 * 0 position\_lat
