@@ -26,6 +26,7 @@ utop:
 format:
 	dune build --auto-promote @fmt
 	opam lint
+	opam lint --normalise fit.opam > tmp.opam && mv tmp.opam fit.opam
 	git ls-files '**/*.[ch]' | xargs -n1 indent -nut -i8
 
 %.mli: %.ml
