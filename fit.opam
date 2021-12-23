@@ -1,6 +1,12 @@
 opam-version: "2.0"
 name: "fit"
 synopsis: "A parser for FIT files"
+description: """
+Fit is library for reading FIT files as they are produced by Garmin and
+other fitness devices. It comes with a small command-line tool to emit
+some of that information as JSON, mostly for debugging. Fit is not
+comprehensive but reads the most important records from a FIT file that
+contains the actual periodic measurements."""
 maintainer: "Christian Lindig <lindig@gmail.com>"
 authors: "Christian Lindig <lindig@gmail.com>"
 license: "MIT"
