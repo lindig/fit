@@ -50,7 +50,7 @@ module Type = struct
       msg : int
     ; arch : arch
     ; fields : field list
-    ; dev_fields : int  (** total size of dev fields *)
+    ; dev_fields : int  (** total size in bytes of dev fields *)
   }
   (** A record is comprised of fields; the overall purpose of the record
       is captured by the msg number; the binary format of data in the
@@ -396,7 +396,7 @@ end
 module Record = struct
   (** The messages with tag 20 (called "record") are at the heart of all
       FIT files as they contain the measurements. These records may
-      contain many different values their presence cannot be expected.
+      contain different values and their presence cannot be expected.
       This module provides a representation for such records but covers
       only the most common values and is not comprehensive *)
 

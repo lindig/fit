@@ -20,10 +20,10 @@ timestamp.
       "253": 971857351
     }
 
-Each record has a global message number (20) which defines the purpose
+Each record has a global message number (like 20) which defines the purpose
 of the record and a number of values in position slots. The meaning of
 these is defined in the FIT Protocol but this library (so far) only
-implements the parsing. For example, 20 message is called _record_ in
+implements the parsing. For example, message 20 is called _record_ in
 the FIT protocol and slots have these meanings:
 
 * 0 position\_lat
@@ -101,6 +101,25 @@ Once installed, you can use it:
     utop # open Rresult;;
     utop # Fit.read "data/xpress-4x-2020-10-17.fit" >>= fun fit ->
            Fit.to_json |> R.return;;
+
+The `fit` binary takes a FIT file as argument:
+
+    $ fit data/xpress-4x-2020-10-17.fit | tail -15
+        "58": 11,
+        "20": null,
+        "21": null
+      },
+      {
+        "msg": "activity",
+        "timestamp": "2020-10-17T08:22:35",
+        "0": 7263000,
+        "5": 971860957,
+        "1": 1,
+        "2": 0,
+        "3": 26,
+        "4": 1
+      }
+    $ fit --help
 
 
 # Resources
