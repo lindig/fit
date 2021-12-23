@@ -85,21 +85,21 @@ module Type = struct
     any_uint8 >>= fun ty' ->
     let ty =
       match ty' & 0b1111 with
-      | 0  -> Enum
-      | 1  -> Int (Signed, 8, FF)
-      | 2  -> Int (Unsigned, 8, FF)
-      | 3  -> Int (Signed, 16, FF)
-      | 4  -> Int (Unsigned, 16, FF)
-      | 5  -> Int (Signed, 32, FF)
-      | 6  -> Int (Unsigned, 32, FF)
-      | 7  -> String
-      | 8  -> Float 32
-      | 9  -> Float 64
+      | 0 -> Enum
+      | 1 -> Int (Signed, 8, FF)
+      | 2 -> Int (Unsigned, 8, FF)
+      | 3 -> Int (Signed, 16, FF)
+      | 4 -> Int (Unsigned, 16, FF)
+      | 5 -> Int (Signed, 32, FF)
+      | 6 -> Int (Unsigned, 32, FF)
+      | 7 -> String
+      | 8 -> Float 32
+      | 9 -> Float 64
       | 10 -> Int (Unsigned, 8, ZZ)
       | 11 -> Int (Unsigned, 16, ZZ)
       | 12 -> Int (Unsigned, 32, ZZ)
       | 13 -> Bytes
-      | _  -> failwith "unknown field base type"
+      | _ -> failwith "unknown field base type"
     in
     return { slot; size; ty }
 
@@ -197,7 +197,7 @@ let base arch ty =
     find *)
 let record arch ty =
   let rec loop vs = function
-    | []      -> return { msg = ty.Type.msg; fields = List.rev vs }
+    | [] -> return { msg = ty.Type.msg; fields = List.rev vs }
     | t :: ts -> base arch t >>= fun v -> loop ((t.Type.slot, v) :: vs) ts
   in
   loop [] ty.Type.fields >>= fun result ->
@@ -219,7 +219,7 @@ module File = struct
         string ".FIT"
         *> (if size = 14 then advance 2 (* skip CRC *) else advance 0)
         *> return { protocol; profile; length = Int32.to_int length }
-    | n                 -> fail_with "found unexpected header of size %d" n
+    | n -> fail_with "found unexpected header of size %d" n
 
   let block (dict, rs) =
     pos >>= fun p ->
@@ -244,7 +244,7 @@ module File = struct
         | Some ty ->
             let arch = ty.arch in
             record arch ty >>= fun r -> return (dict, r :: rs)
-        | None    ->
+        | None ->
             pos >>= fun p ->
             fail_with "corrupted file? No type for key=%d offset=%d at %s" key p
               __LOC__)
@@ -258,7 +258,7 @@ module File = struct
         | Some ty ->
             let arch = ty.arch in
             record arch ty >>= fun r -> return (dict, r :: rs)
-        | None    ->
+        | None ->
             pos >>= fun p ->
             fail_with "corrupted file? No type for key=%d offset=%d at %s" key p
               __LOC__)
@@ -324,7 +324,7 @@ module MSG = struct
   let lookup key =
     match Dict.find_opt key msgs with
     | Some name -> name
-    | None      -> string_of_int key
+    | None -> string_of_int key
 end
 
 module Decode = struct
@@ -337,20 +337,20 @@ module Decode = struct
     let offset = 631065600.0 in
     match v with
     | Int32 n -> Int32.to_float n +. offset
-    | _       -> failwith "unexpected value"
+    | _ -> failwith "unexpected value"
 
   let scale scale offset v =
     let scale = Float.of_int scale in
     let offset = Float.of_int offset in
     match v with
-    | Int x   -> (Float.of_int x /. scale) -. offset
+    | Int x -> (Float.of_int x /. scale) -. offset
     | Float x -> (x /. scale) -. offset
     | Int32 x -> (Int32.to_float x /. scale) -. offset
-    | _       -> failwith "unexpected value"
+    | _ -> failwith "unexpected value"
 
   let latlon = function
     | Int32 x -> Int32.to_float x *. 180.0 /. 2147483648.0
-    | _       -> failwith "unexpected value"
+    | _ -> failwith "unexpected value"
 end
 
 module JSON = struct
@@ -360,7 +360,7 @@ module JSON = struct
     | Int32 n ->
         `String
           (Int32.to_float n +. offset |> ISO8601.Permissive.string_of_datetime)
-    | _       -> `Null
+    | _ -> `Null
 
   let scale scale offset v =
     try `Float (Decode.scale scale offset v) with _ -> `Null
@@ -371,21 +371,21 @@ module JSON = struct
      how to decode the associated value *)
   let value msg pos v =
     match (msg, pos, v) with
-    | 20, 0, v        -> ("latitude", latlon v)
-    | 20, 1, v        -> ("longitude", latlon v)
-    | 20, 2, v        -> ("altitude", scale 5 500 v)
-    | 20, 3, v        -> ("heartrate", scale 1 0 v)
-    | 20, 4, v        -> ("cadence", scale 1 0 v)
-    | 20, 5, v        -> ("distance", scale 100 0 v)
-    | 20, 6, v        -> ("speed", scale 1000 0 v)
-    | 20, 13, v       -> ("temperature", scale 1 0 v)
-    | _, 253, v       -> ("timestamp", timestamp v)
-    | _, _, Enum n    -> (string_of_int pos, `Float (Float.of_int n))
-    | _, _, String s  -> (string_of_int pos, `String s)
-    | _, _, Int i     -> (string_of_int pos, `Float (Float.of_int i))
+    | 20, 0, v -> ("latitude", latlon v)
+    | 20, 1, v -> ("longitude", latlon v)
+    | 20, 2, v -> ("altitude", scale 5 500 v)
+    | 20, 3, v -> ("heartrate", scale 1 0 v)
+    | 20, 4, v -> ("cadence", scale 1 0 v)
+    | 20, 5, v -> ("distance", scale 100 0 v)
+    | 20, 6, v -> ("speed", scale 1000 0 v)
+    | 20, 13, v -> ("temperature", scale 1 0 v)
+    | _, 253, v -> ("timestamp", timestamp v)
+    | _, _, Enum n -> (string_of_int pos, `Float (Float.of_int n))
+    | _, _, String s -> (string_of_int pos, `String s)
+    | _, _, Int i -> (string_of_int pos, `Float (Float.of_int i))
     | _, _, Int32 i32 -> (string_of_int pos, `Float (Int32.to_float i32))
-    | _, _, Float f   -> (string_of_int pos, `Float f)
-    | _, _, Unknown   -> (string_of_int pos, `Null)
+    | _, _, Float f -> (string_of_int pos, `Float f)
+    | _, _, Unknown -> (string_of_int pos, `Null)
 
   let field msg (pos, v) = value msg pos v
 
@@ -416,7 +416,7 @@ module Record = struct
   let get slot fields decoder =
     List.assoc_opt slot fields |> function
     | Some x -> ( try Some (decoder x) with _ -> None)
-    | None   -> None
+    | None -> None
 
   let record = function
     | { msg = 20; fields } -> (
@@ -434,7 +434,7 @@ module Record = struct
             ; speed = get 6 fields (Decode.scale 1000 0)
             }
         with _ -> None)
-    | _                    -> None
+    | _ -> None
 end
 
 let to_json fit = `A (List.rev_map JSON.record fit.records)
