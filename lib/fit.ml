@@ -1,12 +1,14 @@
+(* Christian Lindig <lindig@gmail.com>
+ *)
+
 open Angstrom
 
-let defer f = Fun.protect ~finally:f
+let defer finally = Fun.protect ~finally
 
 (** redefine & as bitwise operation, && is still logical and *)
 let ( & ) = Int.logand
 
 let ( >> ) = Int.shift_right
-
 let fail_with fmt = Printf.kprintf (fun msg -> fail msg) fmt
 
 type arch = BE  (** Big Endian *) | LE  (** Little Endian *)
@@ -14,22 +16,35 @@ type arch = BE  (** Big Endian *) | LE  (** Little Endian *)
 module Dict = Map.Make (Int)
 
 module Type = struct
+  (** A FIT file holds records of values. Each value has a type and
+      a record is defined by the type of each value. This structure is
+      defined in the FIT file itself. This module captures this type
+      structure. *)
+
+  (** An integer can be signed or unsigned *)
   type sign = Signed | Unsigned
 
+  (** An invalid integer value is either denoted as zero (ZZ) or FF,
+      depending on its type *)
   type invalid = ZZ | FF
 
+  (** base types - a value has one of these types *)
   type base =
     | Enum
     | Bytes
     | String
     | Int of sign * int * invalid
-    | Float of int
+    | Float of int  (** either 32 or 64 bits *)
 
   type field = {
       slot : int  (** position within record - defines purpose *)
     ; size : int  (** in bytes *)
     ; ty : base  (** representation *)
   }
+  (** A record is composed of fields. A field has a size and type. The
+      slot is a number that defines its purpose, like heart rate, and
+      this meaning is assigned in the protocol and not in the binary
+      stream itself *)
 
   type record = {
       msg : int
@@ -37,11 +52,13 @@ module Type = struct
     ; fields : field list
     ; dev_fields : int  (** total size of dev fields *)
   }
+  (** A record is comprised of fields; the overall purpose of the record
+      is captured by the msg number; the binary format of data in the
+      fields respects the arch architecture. [dev_fields] are additional
+      fields which we don't decode but just skip over *)
 
   let sum = List.fold_left ( + ) 0
-
   let size { size; _ } = size
-
   let total fs = fs |> List.map size |> sum
 
   let json { msg; arch; fields; dev_fields } =
@@ -86,6 +103,9 @@ module Type = struct
     in
     return { slot; size; ty }
 
+  (** parse a [record] definition. We know ahead of time if the record
+      defintion may contain development field definitions, which we then
+      have to read as well *)
   let record ~dev =
     (int8 0 *> any_int8 >>= function
      | 0 -> return LE
@@ -107,6 +127,7 @@ end
 
 type header = { protocol : int; profile : int; length : int }
 
+(** A [value] represents a datum read from a FIT file. *)
 type value =
   | Enum of int
   | String of string
@@ -116,8 +137,10 @@ type value =
   | Unknown
 
 type record = { msg : int; fields : (int * value) list }
+(** A [record] is a record of values read from a FIT file *)
 
 type t = { header : header; records : record list }
+(** [t] represents the contents of a FIT file *)
 
 let base arch ty =
   let value =
@@ -169,6 +192,9 @@ let base arch ty =
     advance (ty.Type.size - size) >>= fun _ -> return v
   else return v
 
+(** read a record (of type [ty]) of values. Each value in the record is
+    read by [loop] which loops over the types of values we expect to
+    find *)
 let record arch ty =
   let rec loop vs = function
     | []      -> return { msg = ty.Type.msg; fields = List.rev vs }
@@ -254,6 +280,9 @@ module File = struct
 end
 
 module MSG = struct
+  (** Limited support for decoding records; the most common record is 20
+      "record". *)
+
   let add map (k, v) = Dict.add k v map
 
   let msgs =
@@ -299,6 +328,11 @@ module MSG = struct
 end
 
 module Decode = struct
+  (* Values are scaled and need to be decoded. The scaling is depends on
+     the record and slot of a value and what scaling is used by what
+     slot is defined in the protocol and can't be deduced from the FIT
+     file alone *)
+
   let timestamp v =
     let offset = 631065600.0 in
     match v with
@@ -333,6 +367,8 @@ module JSON = struct
 
   let latlon v = try `Float (Decode.latlon v) with _ -> `Null
 
+  (* For the most common record "20", here is the meaning of slots and
+     how to decode the associated value *)
   let value msg pos v =
     match (msg, pos, v) with
     | 20, 0, v        -> ("latitude", latlon v)
@@ -358,7 +394,7 @@ module JSON = struct
 end
 
 module Record = struct
-  (** The messages with tag 20 (called "record") are at the heat of all
+  (** The messages with tag 20 (called "record") are at the heart of all
       FIT files as they contain the measurements. These records may
       contain many different values their presence cannot be expected.
       This module provides a representation for such records but covers

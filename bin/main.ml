@@ -43,5 +43,4 @@ module Command = struct
 end
 
 let main () = C.Term.(exit @@ eval Command.fit)
-
 let () = if !Sys.interactive then () else main ()
