@@ -80,9 +80,9 @@ module Type = struct
 
   (** parse a [field] definition from a FIT file *)
   let field =
-    any_uint8 >>= fun slot ->
-    any_uint8 >>= fun size ->
-    any_uint8 >>= fun ty' ->
+    let* slot = any_uint8 in
+    let* size = any_uint8 in
+    let* ty' = any_uint8 in
     let ty =
       match ty' & 0b1111 with
       | 0 -> Enum
@@ -107,21 +107,23 @@ module Type = struct
       defintion may contain development field definitions, which we then
       have to read as well *)
   let record ~dev =
-    (int8 0 *> any_int8 >>= function
-     | 0 -> return LE
-     | 1 -> return BE
-     | n -> fail_with "expected 0 or 1 in byte for endianness, found %d" n)
-    >>= fun arch ->
-    (match arch with LE -> LE.any_uint16 | BE -> BE.any_uint16) >>= fun msg ->
-    any_int8 >>= fun n ->
-    count n field >>= fun fields ->
+    let* arch =
+      int8 0 *> any_int8 >>= function
+      | 0 -> return LE
+      | 1 -> return BE
+      | n -> fail_with "expected 0 or 1 in byte for endianness, found %d" n
+    in
+    let* msg = match arch with LE -> LE.any_uint16 | BE -> BE.any_uint16 in
+    let* n = any_int8 in
+    let* fields = count n field in
     let dev_fields =
       if dev then
-        any_int8 >>= fun n ->
-        count n field >>= fun dev_fields -> return dev_fields
+        let* n = any_int8 in
+        let* dev_fields = count n field in
+        return dev_fields
       else return []
     in
-    dev_fields >>= fun dev_fields ->
+    let* dev_fields = dev_fields in
     return { msg; arch; fields; dev_fields = total dev_fields }
 end
 
@@ -184,9 +186,9 @@ let base arch ty =
     | _, _ -> advance ty.Type.size *> return Unknown
   in
 
-  pos >>= fun before ->
-  value >>= fun v ->
-  pos >>= fun after ->
+  let* before = pos in
+  let* v = value in
+  let* after = pos in
   let size = after - before in
   if size < ty.Type.size then
     advance (ty.Type.size - size) >>= fun _ -> return v
