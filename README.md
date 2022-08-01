@@ -4,10 +4,14 @@
 
 # FIT
 
-This is a minimal [OCaml] project to parse FIT files as they are
-produced by personal fitness devices. FIT is a binary format invented by
-Garmin that groups basic values in records, which typically include a
-timestamp.
+This is a minimal [OCaml] project to parse [FIT] files as they are
+produced by personal fitness devices. The main purpose of FIT is to
+provide a library for reading such FIT files but in addition it includes
+a small command line tool to emit FIT files in JSON format.
+
+[FIT] is a binary format invented by Garmin that groups basic values in
+records, which typically include a timestamp. Below is such a record in
+JSON format as emitted by the tool.
 
     {
       "msg": "20",
@@ -22,7 +26,7 @@ timestamp.
 
 Each record has a global message number (like 20) which defines the purpose
 of the record and a number of values in position slots. The meaning of
-these is defined in the FIT Protocol but this library (so far) only
+these is defined in the [FIT] Protocol but this library (so far) only
 implements the parsing. For example, message 20 is called _record_ in
 the FIT protocol and slots have these meanings:
 
@@ -39,15 +43,23 @@ protocol, and this transformation is only implemented for a few fields
 of the "record" message:
 
     {
+      "msg": "69",
+      "0": 4
+    },
+    {
       "msg": "record",
-      "timestamp": "2020-10-17T06:25:19",
-      "0": 622927716,
-      "1": 1703145,
-      "speed": 2.745,
-      "distance": 277.23,
+      "timestamp": "2020-10-17T06:24:03",
+      "latitude": 52.21163995563984,
+      "longitude": 0.1410909835249186,
+      "speed": 2.767,
+      "distance": 65.54000000000001,
       "altitude": -118.8,
-      "temperature": inf
-    }
+      "temperature": 10
+    },
+
+As can be seen above, FIT does not implement decoding of "69" message
+blocks. The "record" (20) block is usually the one we are interested in
+and FIT implements decoding of the most interesing fields.
 
 # CLI
 
@@ -86,8 +98,8 @@ I am using this currently for inspecting FIT files. The FIT file in
 
 # Installing FIT
 
-Version 1.0.1 has been published as an Opam package such that it can be
-installed from Opam:
+Version 1.0.1 has been published as an [Opam] package such that it can
+be installed from Opam:
 
     opam install fit
 
@@ -126,6 +138,8 @@ The `fit` binary takes a FIT file as argument:
 
 * https://developer.garmin.com/fit/protocol/
 * https://www.pinns.co.uk/osm/fit-for-dummies.html
+
+
 # Contribute
 
 If you find this useful, please contribute back by raising pull
@@ -133,3 +147,4 @@ requests for improvements you made.
 
 [OCaml]:  https://www.ocaml.org/
 [Opam]:   https://opam.ocaml.org/
+[FIT]:    https://developer.garmin.com/fit/protocol/

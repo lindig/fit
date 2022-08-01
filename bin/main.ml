@@ -39,8 +39,10 @@ module Command = struct
 
   let fit =
     let doc = "process FIT file" in
-    C.Term.(const fit $ path, info "fit" ~doc ~man:help)
+    let info = C.Cmd.info "fit" ~doc ~man:help in
+    C.(Cmd.v info Term.(const fit $ path))
 end
 
-let main () = C.Term.(exit @@ eval Command.fit)
+let main () = C.Cmd.eval Command.fit |> exit
+
 let () = if !Sys.interactive then () else main ()
