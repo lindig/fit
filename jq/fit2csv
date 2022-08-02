@@ -1,0 +1,26 @@
+#! /usr/bin/jq -rf
+
+def header:
+  ["distance"
+  ,"speed"
+  ,"cadence"
+  ]
+;
+
+def cond:
+  .msg == "record"
+  and has("distance")
+  and has("speed")
+  and has("cadence")
+;
+
+def fields:
+  [.distance
+  ,.speed
+  ,.cadence
+  ]
+;
+
+(.[]|select(cond)|fields)|@csv
+
+
