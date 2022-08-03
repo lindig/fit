@@ -1,4 +1,4 @@
-#! /usr/bin/jq -rf
+#! /usr/bin/env jq -rf
 
 def header:
   ["distance"
@@ -10,13 +10,14 @@ def header:
 def cond:
   .msg == "record"
   and has("distance")
-  and has("speed")
+  and (has("speed") or has("enhanced_speed"))
   and has("cadence")
 ;
 
 def fields:
   [.distance
   ,.speed
+  ,.enhanced_speed
   ,.cadence
   ]
 ;

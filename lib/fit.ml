@@ -383,6 +383,7 @@ module JSON = struct
     | 20, 4, v -> ("cadence", scale 1 0 v)
     | 20, 5, v -> ("distance", scale 100 0 v)
     | 20, 6, v -> ("speed", scale 1000 0 v)
+    | 20, 73, v -> ("enhanced_speed", scale 1000 0 v)
     | 20, 13, v -> ("temperature", scale 1 0 v)
     | _, 253, v -> ("timestamp", timestamp v)
     | _, _, Enum n -> (string_of_int pos, `Float (Float.of_int n))
