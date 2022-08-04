@@ -4,6 +4,7 @@
 * Emit NaN float values as JSON Null. Previously emitted as nan, which
   is not valid JSON.
 * Decode "enhanced_speed" field in "record" messages for JSON output.
+* Decode "cycle_length" and "total_cycles" in "record" messages.
 
 # 1.0.3
 

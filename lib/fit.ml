@@ -9,7 +9,6 @@ let defer finally = Fun.protect ~finally
 let ( & ) = Int.logand
 
 let ( >> ) = Int.shift_right
-
 let fail_with fmt = Printf.kprintf (fun msg -> fail msg) fmt
 
 type arch = BE  (** Big Endian *) | LE  (** Little Endian *)
@@ -59,9 +58,7 @@ module Type = struct
       fields which we don't decode but just skip over *)
 
   let sum = List.fold_left ( + ) 0
-
   let size { size; _ } = size
-
   let total fs = fs |> List.map size |> sum
 
   let json { msg; arch; fields; dev_fields } =
@@ -385,6 +382,8 @@ module JSON = struct
     | 20, 6, v -> ("speed", scale 1000 0 v)
     | 20, 73, v -> ("enhanced_speed", scale 1000 0 v)
     | 20, 13, v -> ("temperature", scale 1 0 v)
+    | 20, 12, v -> ("cycle_length", scale 100 0 v)
+    | 20, 19, v -> ("total_cycles", scale 1 0 v)
     | _, 253, v -> ("timestamp", timestamp v)
     | _, _, Enum n -> (string_of_int pos, `Float (Float.of_int n))
     | _, _, String s -> (string_of_int pos, `String s)
