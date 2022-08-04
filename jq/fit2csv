@@ -1,4 +1,4 @@
-#! /usr/bin/env jq -rf
+#! /usr/bin/env -S jq -rf
 
 def header:
   ["distance"
@@ -16,12 +16,15 @@ def cond:
 
 def fields:
   [.distance
-  ,.speed
-  ,.enhanced_speed
+  ,.speed // .enhanced_speed
   ,.cadence
   ]
 ;
 
-(.[]|select(cond)|fields)|@csv
+def csv:
+  [header] + (.|map(select(cond)|fields))
+;
+
+csv|.[]|@csv
 
 
