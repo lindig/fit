@@ -390,6 +390,7 @@ module JSON = struct
     | _, _, String s -> (string_of_int pos, `String s)
     | _, _, Int i -> (string_of_int pos, `Float (Float.of_int i))
     | _, _, Int32 i32 -> (string_of_int pos, `Float (Int32.to_float i32))
+    | _, _, Float f when Float.is_nan f -> (string_of_int pos, `Null)
     | _, _, Float f -> (string_of_int pos, `Float f)
     | _, _, Unknown -> (string_of_int pos, `Null)
 
