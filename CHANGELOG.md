@@ -1,6 +1,9 @@
 
 # 1.0.4
 
+* Emit NaN float values as JSON Null. Previously emitted as nan, which
+  is not valid JSON.
+* Decode "enhanced_speed" field in "record" messages for JSON output.
 
 # 1.0.3
 
