@@ -5,6 +5,7 @@
   is not valid JSON.
 * Decode "enhanced_speed" field in "record" messages for JSON output.
 * Decode "cycle_length" and "total_cycles" in "record" messages.
+* Add a simple jq(1) script that transforms JSON to CSV for some fields.
 
 # 1.0.3
 
