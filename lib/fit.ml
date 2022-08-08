@@ -9,7 +9,6 @@ let defer finally = Fun.protect ~finally
 let ( & ) = Int.logand
 
 let ( >> ) = Int.shift_right
-
 let fail_with fmt = Printf.kprintf (fun msg -> fail msg) fmt
 
 type arch = BE  (** Big Endian *) | LE  (** Little Endian *)
@@ -59,9 +58,7 @@ module Type = struct
       fields which we don't decode but just skip over *)
 
   let sum = List.fold_left ( + ) 0
-
   let size { size; _ } = size
-
   let total fs = fs |> List.map size |> sum
 
   let json { msg; arch; fields; dev_fields } =
@@ -158,6 +155,8 @@ let base arch ty =
     | x when x = Float.neg_infinity -> return Unknown
     | x -> return (Float x)
   in
+  let int32 ukn x = return (if x = ukn then Unknown else Int32 x) in
+  let int ukn x = return (if x = ukn then Unknown else Int x) in
   let value =
     match (arch, ty.Type.ty) with
     | _, Type.Bytes -> take ty.Type.size >>= fun x -> return (String x)
@@ -168,30 +167,16 @@ let base arch ty =
     | LE, Type.Int (Signed, 16, _) -> LE.any_int16 >>= fun x -> return (Int x)
     | BE, Type.Int (Signed, 32, _) -> BE.any_int32 >>= fun x -> return (Int32 x)
     | LE, Type.Int (Signed, 32, _) -> LE.any_int32 >>= fun x -> return (Int32 x)
-    | _, Type.Int (Unsigned, 8, ZZ) ->
-        any_uint8 >>= fun x -> return (if x = 0 then Unknown else Int x)
-    | LE, Type.Int (Unsigned, 16, ZZ) ->
-        LE.any_uint16 >>= fun x -> return (if x = 0 then Unknown else Int x)
-    | BE, Type.Int (Unsigned, 16, ZZ) ->
-        BE.any_uint16 >>= fun x -> return (if x = 0 then Unknown else Int x)
-    | LE, Type.Int (Unsigned, 32, ZZ) ->
-        LE.any_int32 >>= fun x -> return (if x = 0l then Unknown else Int32 x)
-    | BE, Type.Int (Unsigned, 32, ZZ) ->
-        BE.any_int32 >>= fun x -> return (if x = 0l then Unknown else Int32 x)
-    | _, Type.Int (Unsigned, 8, FF) ->
-        any_uint8 >>= fun x -> return (if x = 0xff then Unknown else Int x)
-    | LE, Type.Int (Unsigned, 16, FF) ->
-        LE.any_uint16 >>= fun x ->
-        return (if x = 0xffff then Unknown else Int x)
-    | BE, Type.Int (Unsigned, 16, FF) ->
-        BE.any_uint16 >>= fun x ->
-        return (if x = 0xffff then Unknown else Int x)
-    | LE, Type.Int (Unsigned, 32, FF) ->
-        LE.any_int32 >>= fun x ->
-        return (if x = 0xffffffffl then Unknown else Int32 x)
-    | BE, Type.Int (Unsigned, 32, FF) ->
-        BE.any_int32 >>= fun x ->
-        return (if x = 0xffffffffl then Unknown else Int32 x)
+    | _, Type.Int (Unsigned, 8, ZZ) -> any_uint8 >>= int 0
+    | LE, Type.Int (Unsigned, 16, ZZ) -> LE.any_uint16 >>= int 0
+    | BE, Type.Int (Unsigned, 16, ZZ) -> BE.any_uint16 >>= int 0
+    | LE, Type.Int (Unsigned, 32, ZZ) -> LE.any_int32 >>= int32 0l
+    | BE, Type.Int (Unsigned, 32, ZZ) -> BE.any_int32 >>= int32 0l
+    | _, Type.Int (Unsigned, 8, FF) -> any_uint8 >>= int 0xf
+    | LE, Type.Int (Unsigned, 16, FF) -> LE.any_uint16 >>= int 0xffff
+    | BE, Type.Int (Unsigned, 16, FF) -> BE.any_uint16 >>= int 0xffff
+    | LE, Type.Int (Unsigned, 32, FF) -> LE.any_int32 >>= int32 0xffff_ffffl
+    | BE, Type.Int (Unsigned, 32, FF) -> BE.any_int32 >>= int32 0xffff_ffffl
     | BE, Type.Float 32 -> BE.any_float >>= float
     | LE, Type.Float 32 -> LE.any_float >>= float
     | BE, Type.Float 64 -> BE.any_double >>= float
