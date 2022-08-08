@@ -9,7 +9,8 @@ let defer finally = Fun.protect ~finally
 let ( & ) = Int.logand
 
 let ( >> ) = Int.shift_right
-let fail_with fmt = Printf.kprintf (fun msg -> fail msg) fmt
+let fail fmt = Printf.kprintf (fun msg -> fail msg) fmt
+let failwith fmt = Printf.kprintf (fun msg -> failwith msg) fmt
 
 type arch = BE  (** Big Endian *) | LE  (** Little Endian *)
 
@@ -99,7 +100,7 @@ module Type = struct
       | 11 -> Int (Unsigned, 16, ZZ)
       | 12 -> Int (Unsigned, 32, ZZ)
       | 13 -> Bytes
-      | _ -> failwith "unknown field base type"
+      | _ -> failwith "unknown field base type (%s)" __LOC__
     in
     return { slot; size; ty }
 
@@ -111,7 +112,7 @@ module Type = struct
       int8 0 *> any_int8 >>= function
       | 0 -> return LE
       | 1 -> return BE
-      | n -> fail_with "expected 0 or 1 in byte for endianness, found %d" n
+      | n -> fail "expected 0 or 1 in byte for endianness, found %d" n
     in
     let* msg = match arch with LE -> LE.any_uint16 | BE -> BE.any_uint16 in
     let* n = any_int8 in
@@ -223,7 +224,7 @@ module File = struct
         string ".FIT"
         *> (if size = 14 then advance 2 (* skip CRC *) else advance 0)
         *> return { protocol; profile; length = Int32.to_int length }
-    | n -> fail_with "found unexpected header of size %d" n
+    | n -> fail "found unexpected header of size %d" n
 
   let block (dict, rs) =
     pos >>= fun p ->
@@ -250,7 +251,7 @@ module File = struct
             record arch ty >>= fun r -> return (dict, r :: rs)
         | None ->
             pos >>= fun p ->
-            fail_with "corrupted file? No type for key=%d offset=%d at %s" key p
+            fail "corrupted file? No type for key=%d offset=%d at %s" key p
               __LOC__)
     | _ when (tag & 0b1000_0000) <> 0 -> (
         (* Printf.eprintf "%06x tag=0x%x key=%d\n" p tag key; *)
@@ -264,12 +265,12 @@ module File = struct
             record arch ty >>= fun r -> return (dict, r :: rs)
         | None ->
             pos >>= fun p ->
-            fail_with "corrupted file? No type for key=%d offset=%d at %s" key p
+            fail "corrupted file? No type for key=%d offset=%d at %s" key p
               __LOC__)
     | n ->
         (* Printf.eprintf "%06x tag=0x%x key=%d\n" p tag key; *)
         (* _dump dict; *)
-        fail_with "unexpected block with tag 0x%x at offset %d" n p
+        fail "unexpected block with tag 0x%x at offset %d" n p
 
   let rec blocks xx finish =
     pos >>= fun p ->
@@ -341,7 +342,7 @@ module Decode = struct
     let offset = 631065600.0 in
     match v with
     | Int32 n -> Int32.to_float n +. offset
-    | _ -> failwith "unexpected value"
+    | _ -> failwith "unexpected value (%s)" __LOC__
 
   let scale scale offset v =
     let scale = Float.of_int scale in
@@ -350,11 +351,11 @@ module Decode = struct
     | Int x -> (Float.of_int x /. scale) -. offset
     | Float x -> (x /. scale) -. offset
     | Int32 x -> (Int32.to_float x /. scale) -. offset
-    | _ -> failwith "unexpected value"
+    | _ -> failwith "unexpected value (%s)" __LOC__
 
   let latlon = function
     | Int32 x -> Int32.to_float x *. 180.0 /. 2147483648.0
-    | _ -> failwith "unexpected value"
+    | _ -> failwith "unexpected value (%s)" __LOC__
 end
 
 module JSON = struct
@@ -456,7 +457,7 @@ let read_file max_size path =
   let ic = open_in path in
   defer (fun () -> close_in ic) @@ fun () ->
   let size = in_channel_length ic in
-  if size > max_size then failwith "input file exceeds maxium size"
+  if size > max_size then failwith "input file %s exceeds maximum size" path
   else really_input_string ic size
 
 let read ?(max_size = 100 * 1024) path =

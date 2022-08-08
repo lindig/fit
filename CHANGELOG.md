@@ -8,6 +8,7 @@
 * Add a simple jq(1) script that transforms JSON to CSV for some fields.
 * Improve error handling for float values: NaN and infities are reported
   as Unknown values (and Null in JSON).
+* Simplify code for parsing and decoding binary records.
 
 # 1.0.3
 
