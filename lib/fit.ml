@@ -139,7 +139,9 @@ type value =
   | Unknown
 
 type record = { msg : int; fields : (int * value) list }
-(** A [record] is a record of values read from a FIT file *)
+(** A [record] is a record of values read from a FIT file. Each
+ value is in a slot, which is reported as [int] value. Slots are not
+ consecutive and are part of the FIT protocol. *)
 
 type t = { header : header; records : record list }
 (** [t] represents the contents of a FIT file *)
