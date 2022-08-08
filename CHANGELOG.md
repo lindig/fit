@@ -6,6 +6,8 @@
 * Decode "enhanced_speed" field in "record" messages for JSON output.
 * Decode "cycle_length" and "total_cycles" in "record" messages.
 * Add a simple jq(1) script that transforms JSON to CSV for some fields.
+* Improve error handling for float values: NaN and infities are reported
+  as Unknown values (and Null in JSON).
 
 # 1.0.3
 
