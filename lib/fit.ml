@@ -9,6 +9,7 @@ let defer finally = Fun.protect ~finally
 let ( & ) = Int.logand
 
 let ( >> ) = Int.shift_right
+
 let fail_with fmt = Printf.kprintf (fun msg -> fail msg) fmt
 
 type arch = BE  (** Big Endian *) | LE  (** Little Endian *)
@@ -58,7 +59,9 @@ module Type = struct
       fields which we don't decode but just skip over *)
 
   let sum = List.fold_left ( + ) 0
+
   let size { size; _ } = size
+
   let total fs = fs |> List.map size |> sum
 
   let json { msg; arch; fields; dev_fields } =
@@ -145,6 +148,12 @@ type t = { header : header; records : record list }
 (** [t] represents the contents of a FIT file *)
 
 let base arch ty =
+  let float = function
+    | x when Float.is_nan x -> return Unknown
+    | x when x = Float.infinity -> return Unknown
+    | x when x = Float.neg_infinity -> return Unknown
+    | x -> return (Float x)
+  in
   let value =
     match (arch, ty.Type.ty) with
     | _, Type.Bytes -> take ty.Type.size >>= fun x -> return (String x)
@@ -179,10 +188,10 @@ let base arch ty =
     | BE, Type.Int (Unsigned, 32, FF) ->
         BE.any_int32 >>= fun x ->
         return (if x = 0xffffffffl then Unknown else Int32 x)
-    | BE, Type.Float 32 -> BE.any_float >>= fun x -> return (Float x)
-    | LE, Type.Float 32 -> LE.any_float >>= fun x -> return (Float x)
-    | BE, Type.Float 64 -> BE.any_double >>= fun x -> return (Float x)
-    | LE, Type.Float 64 -> LE.any_double >>= fun x -> return (Float x)
+    | BE, Type.Float 32 -> BE.any_float >>= float
+    | LE, Type.Float 32 -> LE.any_float >>= float
+    | BE, Type.Float 64 -> BE.any_double >>= float
+    | LE, Type.Float 64 -> LE.any_double >>= float
     | _, _ -> advance ty.Type.size *> return Unknown
   in
 
