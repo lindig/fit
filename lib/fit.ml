@@ -147,6 +147,10 @@ type record = { msg : int; fields : (int * value) list }
 type t = { header : header; records : record list }
 (** [t] represents the contents of a FIT file *)
 
+(** [base] reads the next value of type [ty] from the stream and returns
+   it as a [value]. The type [ty] is known because the caller knows the 
+   from the record definition the types of all value. Furthermore, the
+   current endianness [arch] is known as well *)
 let base arch ty =
   let float = function
     | x when Float.is_nan x -> return Unknown
@@ -200,12 +204,14 @@ let base arch ty =
   let* after = pos in
   let size = after - before in
   if size < ty.Type.size then
+    (* This works around inconsistent files where the actual size does
+       not match the expected size *)
     advance (ty.Type.size - size) >>= fun _ -> return v
   else return v
 
 (** read a record (of type [ty]) of values. Each value in the record is
     read by [loop] which loops over the types of values we expect to
-    find *)
+    find. Each record field is read by [base]. *)
 let record arch ty =
   let rec loop vs = function
     | [] -> return { msg = ty.Type.msg; fields = List.rev vs }
