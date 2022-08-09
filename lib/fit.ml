@@ -59,9 +59,7 @@ module Type = struct
       fields which we don't decode but just skip over *)
 
   let sum = List.fold_left ( + ) 0
-
   let size { size; _ } = size
-
   let total fs = fs |> List.map size |> sum
 
   let json { msg; arch; fields; dev_fields } =
@@ -162,28 +160,28 @@ let base arch ty =
   in
   let int32 ukn x = return (if x = ukn then Unknown else Int32 x) in
   let int ukn x = return (if x = ukn then Unknown else Int x) in
-  let ukn = -1 in
-  let ukn32 = -1l in
+  let ff = -1 in
+  let ff32 = -1l in
   let value =
     match (arch, ty.Type.ty) with
     | __, Type.Bytes -> take ty.Type.size >>= fun x -> return (String x)
     | __, Type.String -> take ty.Type.size >>= fun x -> return (String x)
     | __, Type.Enum -> any_uint8 >>= fun x -> return (Enum x)
-    | __, Type.Int (Signed, 8, FF) -> any_int8 >>= int ukn
-    | BE, Type.Int (Signed, 16, FF) -> BE.any_int16 >>= int ukn
-    | LE, Type.Int (Signed, 16, FF) -> LE.any_int16 >>= int ukn
-    | BE, Type.Int (Signed, 32, FF) -> BE.any_int32 >>= int32 ukn32
-    | LE, Type.Int (Signed, 32, FF) -> LE.any_int32 >>= int32 ukn32
+    | __, Type.Int (Signed, 8, FF) -> any_int8 >>= int ff
+    | BE, Type.Int (Signed, 16, FF) -> BE.any_int16 >>= int ff
+    | LE, Type.Int (Signed, 16, FF) -> LE.any_int16 >>= int ff
+    | BE, Type.Int (Signed, 32, FF) -> BE.any_int32 >>= int32 ff32
+    | LE, Type.Int (Signed, 32, FF) -> LE.any_int32 >>= int32 ff32
     | __, Type.Int (Unsigned, 8, ZZ) -> any_uint8 >>= int 0
     | LE, Type.Int (Unsigned, 16, ZZ) -> LE.any_uint16 >>= int 0
     | BE, Type.Int (Unsigned, 16, ZZ) -> BE.any_uint16 >>= int 0
     | LE, Type.Int (Unsigned, 32, ZZ) -> LE.any_int32 >>= int32 0l
     | BE, Type.Int (Unsigned, 32, ZZ) -> BE.any_int32 >>= int32 0l
-    | __, Type.Int (Unsigned, 8, FF) -> any_uint8 >>= int ukn
-    | LE, Type.Int (Unsigned, 16, FF) -> LE.any_uint16 >>= int ukn
-    | BE, Type.Int (Unsigned, 16, FF) -> BE.any_uint16 >>= int ukn
-    | LE, Type.Int (Unsigned, 32, FF) -> LE.any_int32 >>= int32 ukn32
-    | BE, Type.Int (Unsigned, 32, FF) -> BE.any_int32 >>= int32 ukn32
+    | __, Type.Int (Unsigned, 8, FF) -> any_uint8 >>= int 0xff
+    | LE, Type.Int (Unsigned, 16, FF) -> LE.any_uint16 >>= int 0xffff
+    | BE, Type.Int (Unsigned, 16, FF) -> BE.any_uint16 >>= int 0xffff
+    | LE, Type.Int (Unsigned, 32, FF) -> LE.any_int32 >>= int32 ff32
+    | BE, Type.Int (Unsigned, 32, FF) -> BE.any_int32 >>= int32 ff32
     | BE, Type.Float 32 -> BE.any_float >>= float
     | LE, Type.Float 32 -> LE.any_float >>= float
     | BE, Type.Float 64 -> BE.any_double >>= float
