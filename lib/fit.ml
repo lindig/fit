@@ -9,7 +9,9 @@ let defer finally = Fun.protect ~finally
 let ( & ) = Int.logand
 
 let ( >> ) = Int.shift_right
+
 let fail fmt = Printf.kprintf (fun msg -> fail msg) fmt
+
 let failwith fmt = Printf.kprintf (fun msg -> failwith msg) fmt
 
 type arch = BE  (** Big Endian *) | LE  (** Little Endian *)
@@ -59,7 +61,9 @@ module Type = struct
       fields which we don't decode but just skip over *)
 
   let sum = List.fold_left ( + ) 0
+
   let size { size; _ } = size
+
   let total fs = fs |> List.map size |> sum
 
   let json { msg; arch; fields; dev_fields } =
@@ -135,7 +139,6 @@ type value =
   | Enum of int
   | String of string
   | Int of int
-  | Int32 of int32
   | Float of float
   | Unknown
 
@@ -152,16 +155,31 @@ type t = { header : header; records : record list }
    from the record definition the types of all value. Furthermore, the
    current endianness [arch] is known as well *)
 let base arch ty =
+  let ff = -1 in
   let float = function
     | x when Float.is_nan x -> return Unknown
     | x when x = Float.infinity -> return Unknown
     | x when x = Float.neg_infinity -> return Unknown
     | x -> return (Float x)
   in
-  let int32 ukn x = return (if x = ukn then Unknown else Int32 x) in
   let int ukn x = return (if x = ukn then Unknown else Int x) in
-  let ff = -1 in
-  let ff32 = -1l in
+  let int32 ukn x =
+    let x = Int32.to_int x in
+    return (if x = ukn then Unknown else Int x)
+  in
+
+  let uint8 unk x =
+    let x = x land 0xff in
+    return (if x = unk then Unknown else Int x)
+  in
+  let uint16 unk x =
+    let x = x land 0xffff in
+    return (if x = unk then Unknown else Int x)
+  in
+  let uint32 unk x =
+    let x = Int32.to_int x land 0xffff_ffff in
+    return (if x = unk then Unknown else Int x)
+  in
   let value =
     match (arch, ty.Type.ty) with
     | __, Type.Bytes -> take ty.Type.size >>= fun x -> return (String x)
@@ -170,18 +188,18 @@ let base arch ty =
     | __, Type.Int (Signed, 8, FF) -> any_int8 >>= int ff
     | BE, Type.Int (Signed, 16, FF) -> BE.any_int16 >>= int ff
     | LE, Type.Int (Signed, 16, FF) -> LE.any_int16 >>= int ff
-    | BE, Type.Int (Signed, 32, FF) -> BE.any_int32 >>= int32 ff32
-    | LE, Type.Int (Signed, 32, FF) -> LE.any_int32 >>= int32 ff32
-    | __, Type.Int (Unsigned, 8, ZZ) -> any_uint8 >>= int 0
-    | LE, Type.Int (Unsigned, 16, ZZ) -> LE.any_uint16 >>= int 0
-    | BE, Type.Int (Unsigned, 16, ZZ) -> BE.any_uint16 >>= int 0
-    | LE, Type.Int (Unsigned, 32, ZZ) -> LE.any_int32 >>= int32 0l
-    | BE, Type.Int (Unsigned, 32, ZZ) -> BE.any_int32 >>= int32 0l
-    | __, Type.Int (Unsigned, 8, FF) -> any_uint8 >>= int 0xff
-    | LE, Type.Int (Unsigned, 16, FF) -> LE.any_uint16 >>= int 0xffff
-    | BE, Type.Int (Unsigned, 16, FF) -> BE.any_uint16 >>= int 0xffff
-    | LE, Type.Int (Unsigned, 32, FF) -> LE.any_int32 >>= int32 ff32
-    | BE, Type.Int (Unsigned, 32, FF) -> BE.any_int32 >>= int32 ff32
+    | BE, Type.Int (Signed, 32, FF) -> BE.any_int32 >>= int32 ff
+    | LE, Type.Int (Signed, 32, FF) -> LE.any_int32 >>= int32 ff
+    | __, Type.Int (Unsigned, 8, ZZ) -> any_uint8 >>= uint8 0
+    | LE, Type.Int (Unsigned, 16, ZZ) -> LE.any_uint16 >>= uint16 0
+    | BE, Type.Int (Unsigned, 16, ZZ) -> BE.any_uint16 >>= uint16 0
+    | LE, Type.Int (Unsigned, 32, ZZ) -> LE.any_int32 >>= uint32 0
+    | BE, Type.Int (Unsigned, 32, ZZ) -> BE.any_int32 >>= uint32 0
+    | __, Type.Int (Unsigned, 8, FF) -> any_uint8 >>= uint8 0xff
+    | LE, Type.Int (Unsigned, 16, FF) -> LE.any_uint16 >>= uint16 0xffff
+    | BE, Type.Int (Unsigned, 16, FF) -> BE.any_uint16 >>= uint16 0xffff
+    | LE, Type.Int (Unsigned, 32, FF) -> LE.any_int32 >>= uint32 0xffff_ffff
+    | BE, Type.Int (Unsigned, 32, FF) -> BE.any_int32 >>= uint32 0xffff_ffff
     | BE, Type.Float 32 -> BE.any_float >>= float
     | LE, Type.Float 32 -> LE.any_float >>= float
     | BE, Type.Float 64 -> BE.any_double >>= float
@@ -343,7 +361,7 @@ module Decode = struct
   let timestamp v =
     let offset = 631065600.0 in
     match v with
-    | Int32 n -> Int32.to_float n +. offset
+    | Int n -> Int.to_float n +. offset
     | _ -> failwith "unexpected value (%s)" __LOC__
 
   let scale scale offset v =
@@ -352,11 +370,10 @@ module Decode = struct
     match v with
     | Int x -> (Float.of_int x /. scale) -. offset
     | Float x -> (x /. scale) -. offset
-    | Int32 x -> (Int32.to_float x /. scale) -. offset
     | _ -> failwith "unexpected value (%s)" __LOC__
 
   let latlon = function
-    | Int32 x -> Int32.to_float x *. 180.0 /. 2147483648.0
+    | Int x -> Int.to_float x *. 180.0 /. 2147483648.0
     | _ -> failwith "unexpected value (%s)" __LOC__
 end
 
@@ -364,9 +381,9 @@ module JSON = struct
   let timestamp v =
     let offset = 631065600.0 in
     match v with
-    | Int32 n ->
+    | Int n ->
         `String
-          (Int32.to_float n +. offset |> ISO8601.Permissive.string_of_datetime)
+          (Int.to_float n +. offset |> ISO8601.Permissive.string_of_datetime)
     | _ -> `Null
 
   let scale scale offset v =
@@ -393,7 +410,6 @@ module JSON = struct
     | _, _, Enum n -> (string_of_int pos, `Float (Float.of_int n))
     | _, _, String s -> (string_of_int pos, `String s)
     | _, _, Int i -> (string_of_int pos, `Float (Float.of_int i))
-    | _, _, Int32 i32 -> (string_of_int pos, `Float (Int32.to_float i32))
     | _, _, Float f when Float.is_nan f -> (string_of_int pos, `Null)
     | _, _, Float f -> (string_of_int pos, `Float f)
     | _, _, Unknown -> (string_of_int pos, `Null)

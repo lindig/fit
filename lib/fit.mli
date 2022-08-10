@@ -13,7 +13,6 @@ type value =
   | Enum of int
   | String of string
   | Int of int
-  | Int32 of int32
   | Float of float
   | Unknown
 
