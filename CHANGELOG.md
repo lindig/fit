@@ -1,3 +1,7 @@
+# 1.1.0
+
+* Remove Int32 of int32 representation for integer values, always use
+  Int of int.
 
 # 1.0.4
 
