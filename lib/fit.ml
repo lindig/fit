@@ -9,9 +9,7 @@ let defer finally = Fun.protect ~finally
 let ( & ) = Int.logand
 
 let ( >> ) = Int.shift_right
-
 let fail fmt = Printf.kprintf (fun msg -> fail msg) fmt
-
 let failwith fmt = Printf.kprintf (fun msg -> failwith msg) fmt
 
 type arch = BE  (** Big Endian *) | LE  (** Little Endian *)
@@ -61,9 +59,7 @@ module Type = struct
       fields which we don't decode but just skip over *)
 
   let sum = List.fold_left ( + ) 0
-
   let size { size; _ } = size
-
   let total fs = fs |> List.map size |> sum
 
   let json { msg; arch; fields; dev_fields } =
@@ -163,11 +159,6 @@ let base arch ty =
     | x -> return (Float x)
   in
   let int ukn x = return (if x = ukn then Unknown else Int x) in
-  let int32 ukn x =
-    let x = Int32.to_int x in
-    return (if x = ukn then Unknown else Int x)
-  in
-
   let uint8 unk x =
     let x = x land 0xff in
     return (if x = unk then Unknown else Int x)
@@ -175,6 +166,10 @@ let base arch ty =
   let uint16 unk x =
     let x = x land 0xffff in
     return (if x = unk then Unknown else Int x)
+  in
+  let int32 ukn x =
+    let x = Int32.to_int x in
+    return (if x = ukn then Unknown else Int x)
   in
   let uint32 unk x =
     let x = Int32.to_int x land 0xffff_ffff in
