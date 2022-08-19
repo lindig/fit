@@ -9,7 +9,9 @@ let defer finally = Fun.protect ~finally
 let ( & ) = Int.logand
 
 let ( >> ) = Int.shift_right
+
 let fail fmt = Printf.kprintf (fun msg -> fail msg) fmt
+
 let failwith fmt = Printf.kprintf (fun msg -> failwith msg) fmt
 
 type arch = BE  (** Big Endian *) | LE  (** Little Endian *)
@@ -59,15 +61,26 @@ module Type = struct
       fields which we don't decode but just skip over *)
 
   let sum = List.fold_left ( + ) 0
+
   let size { size; _ } = size
+
   let total fs = fs |> List.map size |> sum
 
   let json { msg; arch; fields; dev_fields } =
-    let f { slot; size; _ } =
+    let t = function
+      | Enum -> `String "enum"
+      | Bytes -> `String "bytes"
+      | String -> `String "string"
+      | Int (Signed, bits, _) -> `String (Printf.sprintf "int%d" bits)
+      | Int (Unsigned, bits, _) -> `String (Printf.sprintf "uint%d" bits)
+      | Float bits -> `String (Printf.sprintf "float%d" bits)
+    in
+    let f { slot; size; ty } =
       `O
         [
           ("slot", `Float (float_of_int slot))
         ; ("size", `Float (float_of_int size))
+        ; ("type", t ty)
         ]
     in
     `O
@@ -228,7 +241,7 @@ module File = struct
   let _dump dict =
     Dict.bindings dict
     |> List.rev_map (fun (k, v) -> (string_of_int k, Type.json v))
-    |> fun x -> `O x |> Ezjsonm.to_channel ~minify:false stderr
+    |> fun x -> `O x
 
   let header =
     any_int8 >>= function
