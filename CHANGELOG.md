@@ -2,6 +2,8 @@
 
 * Remove Int32 of int32 representation for integer values, always use
   Int of int.
+* Fix parsing of unsinged numerical values
+* Provide parsing of strings (not just files)
 
 # 1.0.4
 
