@@ -9,9 +9,7 @@ let defer finally = Fun.protect ~finally
 let ( & ) = Int.logand
 
 let ( >> ) = Int.shift_right
-
 let fail fmt = Printf.kprintf (fun msg -> fail msg) fmt
-
 let failwith fmt = Printf.kprintf (fun msg -> failwith msg) fmt
 
 type arch = BE  (** Big Endian *) | LE  (** Little Endian *)
@@ -61,9 +59,7 @@ module Type = struct
       fields which we don't decode but just skip over *)
 
   let sum = List.fold_left ( + ) 0
-
   let size { size; _ } = size
-
   let total fs = fs |> List.map size |> sum
 
   let json { msg; arch; fields; dev_fields } =
@@ -479,6 +475,11 @@ let records fit =
     (fun xs r -> match Record.record r with Some x -> x :: xs | None -> xs)
     [] fit.records
 
+(** parse a string as a FIT file *)
+let parse str =
+  let consume = Consume.Prefix in
+  parse_string ~consume File.read str
+
 let read_file max_size path =
   let ic = open_in path in
   defer (fun () -> close_in ic) @@ fun () ->
@@ -487,7 +488,6 @@ let read_file max_size path =
   else really_input_string ic size
 
 let read ?(max_size = 100 * 1024) path =
-  let consume = Consume.Prefix in
-  try read_file max_size path |> parse_string ~consume File.read
+  try read_file max_size path |> parse
   with e ->
     Error (Printf.sprintf "Can't process %s: %s" path (Printexc.to_string e))

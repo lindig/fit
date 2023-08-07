@@ -26,6 +26,10 @@ type record = { msg : int; fields : (int * value) list }
 type t = { header : header; records : record list }
 (** A FIT file has a header and a list of records (in reversed order) *)
 
+val parse : string -> (t, string) result
+(** [parse fit] parses the binary content [fit], typically loaded from a
+    file *)
+
 val read : ?max_size:int -> string -> (t, string) result
 (** [read path] reads a FIT file from [path] in the file system. The
 input file must not exceed [max_size] (100kb by default) to protect
