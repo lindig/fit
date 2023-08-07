@@ -31,3 +31,10 @@ format:
 
 %.mli: %.ml
 	dune exec -- ocaml-print-intf $<
+
+release:
+	dune-release tag
+	dune-release distrib
+	dune-release opam pkg
+	echo 'use "dune-release opam submit" to release on Opam'
+
