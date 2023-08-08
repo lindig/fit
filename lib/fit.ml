@@ -9,8 +9,8 @@ let defer finally = Fun.protect ~finally
 let ( & ) = Int.logand
 
 let ( >> ) = Int.shift_right
-let fail fmt = Printf.kprintf (fun msg -> fail msg) fmt
-let failwith fmt = Printf.kprintf (fun msg -> failwith msg) fmt
+let fail fmt = Printf.ksprintf fail fmt
+let failwith fmt = Printf.ksprintf failwith fmt
 
 type arch = BE  (** Big Endian *) | LE  (** Little Endian *)
 
@@ -225,8 +225,10 @@ let base arch ty =
     read by [loop] which loops over the types of values we expect to
     find. Each record field is read by [base]. *)
 let record arch ty =
+  let cmp (x,_) (y,_) = Int.compare x y in
+  let sort vs = List.sort cmp vs in
   let rec loop vs = function
-    | [] -> return { msg = ty.Type.msg; fields = List.rev vs }
+    | [] -> return { msg = ty.Type.msg; fields = sort vs }
     | t :: ts -> base arch t >>= fun v -> loop ((t.Type.slot, v) :: vs) ts
   in
   loop [] ty.Type.fields >>= fun result ->
