@@ -61,7 +61,7 @@ As can be seen above, FIT does not implement decoding of "69" message
 blocks. The "record" (20) block is usually the one we are interested in
 and FIT implements decoding of the most interesing fields.
 
-# CLI
+## CLI
 
 This code is primarily intended as a library but it also provides a
 small binary. The `fit` command emits the data to stdout in JSON format.
@@ -96,9 +96,9 @@ I am using this currently for inspecting FIT files. The FIT file in
       },
       ...
 
-# Installing FIT
+## Installing FIT
 
-Version 1.0.1 has been published as an [Opam] package such that it can
+Fit is published as an [Opam] package such that it can
 be installed from Opam:
 
     opam install fit
@@ -133,14 +133,7 @@ The `fit` binary takes a FIT file as argument:
       }
     $ fit --help
 
-
-# Resources
-
-* https://developer.garmin.com/fit/protocol/
-* https://www.pinns.co.uk/osm/fit-for-dummies.html
-
-
-# Contribute
+## Contribute
 
 If you find this useful, please contribute back by raising pull
 requests for improvements you made.
