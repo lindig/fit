@@ -39,6 +39,26 @@ val to_json : t -> Ezjsonm.t
 (** represent FIT file as JSON. This includes decoding some common
     fields in "record" messages. *)
 
+module Decode : sig
+  (** [value]s reported as part of a [record] are often encoded or
+      scaled. This module provides typial decoders. How values are
+      decoded depends on the field and the information is not part of
+      the FIT file per se but is part of the format definition. *)
+
+  val timestamp : value -> float
+  (** decode a time-stamp field; it expects an [Int] value *)
+
+  val scale : int -> int -> value -> float
+  (** many values are scaled. The scale consists of an offset and a
+      factor: [scale factor offset value] decodes [value] using [factor]
+      and [offset]. The [value] is expected to be an [Int] or [Float]
+      value. *)
+
+  val latlon : value -> float
+  (** Corrdinates in latitude or longitude are decoded using [latlon].
+      The [value] is expected to be an [Int]. *)
+end
+
 module Record : sig
   (** decode "record" messages *)
 

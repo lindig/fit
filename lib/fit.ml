@@ -147,6 +147,15 @@ type value =
   | Float of float
   | Unknown
 
+let to_string value =
+  let sprintf = Printf.sprintf in
+  match value with
+  | Enum d -> sprintf "enum(%d)" d
+  | String s -> sprintf "string(%s)" s
+  | Int i -> sprintf "int(%d)" i
+  | Float f -> sprintf "float(%f)" f
+  | Unknown -> "unknown"
+
 type record = { msg : int; fields : (int * value) list }
 (** A [record] is a record of values read from a FIT file. Each
  value is in a slot, which is reported as [int] value. Slots are not
@@ -225,7 +234,7 @@ let base arch ty =
     read by [loop] which loops over the types of values we expect to
     find. Each record field is read by [base]. *)
 let record arch ty =
-  let cmp (x,_) (y,_) = Int.compare x y in
+  let cmp (x, _) (y, _) = Int.compare x y in
   let sort vs = List.sort cmp vs in
   let rec loop vs = function
     | [] -> return { msg = ty.Type.msg; fields = sort vs }
@@ -368,7 +377,7 @@ module Decode = struct
     let offset = 631065600.0 in
     match v with
     | Int n -> Int.to_float n +. offset
-    | _ -> failwith "unexpected value (%s)" __LOC__
+    | v -> failwith "%s: unexpected value: %s" __LOC__ (to_string v)
 
   let scale scale offset v =
     let scale = Float.of_int scale in
@@ -376,11 +385,11 @@ module Decode = struct
     match v with
     | Int x -> (Float.of_int x /. scale) -. offset
     | Float x -> (x /. scale) -. offset
-    | _ -> failwith "unexpected value (%s)" __LOC__
+    | v -> failwith "%s: unexpected value: %s" __LOC__ (to_string v)
 
   let latlon = function
     | Int x -> Int.to_float x *. 180.0 /. 2147483648.0
-    | _ -> failwith "unexpected value (%s)" __LOC__
+    | v -> failwith "%s: unexpected value: %s" __LOC__ (to_string v)
 end
 
 module JSON = struct
