@@ -30,6 +30,13 @@ val parse : string -> (t, string) result
 (** [parse fit] parses the binary content [fit], typically loaded from a
     file *)
 
+val header : string -> (header, string) result
+(** [header fit] parse just the header of a [fit] stream *)
+
+val read_file : max_size:int -> string -> string
+(** [read_file path] reads a file into a string. The file must not
+    exceed [max_size]*)
+
 val read : ?max_size:int -> string -> (t, string) result
 (** [read path] reads a FIT file from [path] in the file system. The
 input file must not exceed [max_size] (100kb by default) to protect

@@ -486,12 +486,16 @@ let records fit =
     (fun xs r -> match Record.record r with Some x -> x :: xs | None -> xs)
     [] fit.records
 
+let header str =
+  let consume = Consume.Prefix in
+  parse_string ~consume File.header str
+
 (** parse a string as a FIT file *)
 let parse str =
   let consume = Consume.Prefix in
   parse_string ~consume File.read str
 
-let read_file max_size path =
+let read_file ~max_size path =
   let ic = open_in path in
   defer (fun () -> close_in ic) @@ fun () ->
   let size = in_channel_length ic in
@@ -499,6 +503,6 @@ let read_file max_size path =
   else really_input_string ic size
 
 let read ?(max_size = 100 * 1024) path =
-  try read_file max_size path |> parse
+  try read_file ~max_size path |> parse
   with e ->
     Error (Printf.sprintf "Can't process %s: %s" path (Printexc.to_string e))
