@@ -42,7 +42,7 @@ val read : ?max_size:int -> string -> (t, string) result
 input file must not exceed [max_size] (100kb by default) to protect
 against attacks when reading user-provided files *)
 
-val to_json : t -> Ezjsonm.t
+val to_json : t -> Yojson.t
 (** represent FIT file as JSON. This includes decoding some common
     fields in "record" messages. *)
 

@@ -79,11 +79,11 @@ module Type = struct
         ; ("type", t ty)
         ]
     in
-    `O
+    `Assoc
       [
         ("msg", `Float (float_of_int msg))
       ; ("arch", `String (match arch with LE -> "LE" | BE -> "BE"))
-      ; ("fields", `A (List.map f fields))
+      ; ("fields", `List (List.map f fields))
       ; ("dev_fields", `Float (float_of_int dev_fields))
       ; ("size", `Float (total fields + dev_fields |> float_of_int))
       ]
@@ -432,7 +432,8 @@ module JSON = struct
   let field msg (pos, v) = value msg pos v
 
   let record r =
-    `O (("msg", `String (MSG.lookup r.msg)) :: List.map (field r.msg) r.fields)
+    `Assoc
+      (("msg", `String (MSG.lookup r.msg)) :: List.map (field r.msg) r.fields)
 end
 
 module Record = struct
@@ -479,7 +480,7 @@ module Record = struct
     | _ -> None
 end
 
-let to_json fit = `A (List.rev_map JSON.record fit.records)
+let to_json fit = `List (List.rev_map JSON.record fit.records)
 
 let records fit =
   List.fold_left

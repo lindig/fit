@@ -1,7 +1,7 @@
 (executable
  (name main)
  (public_name fit)
- (libraries ezjsonm cmdliner fit rresult))
+ (libraries yojson cmdliner fit rresult))
 
 (rule
  (target build.ml)

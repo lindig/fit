@@ -1,7 +1,7 @@
 opam-version: "2.0"
 name: "fit"
 synopsis: "A parser for Garmin FIT data files"
-description: """
+description: """\
 Fit is library for reading FIT files as they are produced by Garmin and
 other fitness devices. It comes with a small command-line tool to emit
 some of that information as JSON, mostly for debugging. Fit is not
@@ -17,7 +17,7 @@ depends: [
   "dune" {>= "2.0"}
   "cmdliner" {>= "1.1.0"}
   "angstrom" {>= "0.15.0"}
-  "ezjsonm" {>= "1.2.0"}
+  "yojson" {>= "2.1.0"}
   "rresult" {>= "0.6.0"}
   "ISO8601" {>= "0.2.6"}
 ]

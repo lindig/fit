@@ -1,6 +1,6 @@
 open Rresult
 module C = Cmdliner
-module J = Ezjsonm
+module J = Yojson
 module F = Fit
 
 let build =
@@ -9,8 +9,7 @@ let build =
 let fit name =
   Fit.read ~max_size:(1024 * 512) name
   |> R.reword_error (fun str -> `Msg str)
-  |> R.failwith_error_msg |> Fit.to_json
-  |> J.to_channel ~minify:false stdout
+  |> R.failwith_error_msg |> Fit.to_json |> J.pretty_to_channel stdout
 
 module Command = struct
   let help =

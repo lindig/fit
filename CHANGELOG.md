@@ -1,3 +1,7 @@
+# 1.2.0
+
+* Replace Ezjsonm with Yojson, which is more widely used
+
 # 1.1.0
 
 * Remove Int32 of int32 representation for integer values, always use
