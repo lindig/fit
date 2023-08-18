@@ -72,7 +72,7 @@ module Type = struct
       | Float bits -> `String (Printf.sprintf "float%d" bits)
     in
     let f { slot; size; ty } =
-      `O
+      `Assoc
         [
           ("slot", `Float (float_of_int slot))
         ; ("size", `Float (float_of_int size))
@@ -248,7 +248,7 @@ module File = struct
   let _dump dict =
     Dict.bindings dict
     |> List.rev_map (fun (k, v) -> (string_of_int k, Type.json v))
-    |> fun x -> `O x
+    |> fun x -> `Assoc x
 
   let header =
     any_int8 >>= function
