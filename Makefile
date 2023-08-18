@@ -38,3 +38,4 @@ release:
 	dune-release opam pkg
 	echo 'use "dune-release opam submit" to release on Opam'
 
+# vim:ts=8:noet:

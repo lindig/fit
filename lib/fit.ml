@@ -72,20 +72,15 @@ module Type = struct
       | Float bits -> `String (Printf.sprintf "float%d" bits)
     in
     let f { slot; size; ty } =
-      `Assoc
-        [
-          ("slot", `Float (float_of_int slot))
-        ; ("size", `Float (float_of_int size))
-        ; ("type", t ty)
-        ]
+      `Assoc [ ("slot", `Int slot); ("size", `Int size); ("type", t ty) ]
     in
     `Assoc
       [
-        ("msg", `Float (float_of_int msg))
+        ("msg", `Int msg)
       ; ("arch", `String (match arch with LE -> "LE" | BE -> "BE"))
       ; ("fields", `List (List.map f fields))
-      ; ("dev_fields", `Float (float_of_int dev_fields))
-      ; ("size", `Float (total fields + dev_fields |> float_of_int))
+      ; ("dev_fields", `Int dev_fields)
+      ; ("size", `Int (total fields + dev_fields))
       ]
 
   (** parse a [field] definition from a FIT file *)
@@ -422,9 +417,9 @@ module JSON = struct
     | 20, 12, v -> ("cycle_length", scale 100 0 v)
     | 20, 19, v -> ("total_cycles", scale 1 0 v)
     | _, 253, v -> ("timestamp", timestamp v)
-    | _, _, Enum n -> (string_of_int pos, `Float (Float.of_int n))
+    | _, _, Enum n -> (string_of_int pos, `Int n)
     | _, _, String s -> (string_of_int pos, `String s)
-    | _, _, Int i -> (string_of_int pos, `Float (Float.of_int i))
+    | _, _, Int i -> (string_of_int pos, `Int i)
     | _, _, Float f when Float.is_nan f -> (string_of_int pos, `Null)
     | _, _, Float f -> (string_of_int pos, `Float f)
     | _, _, Unknown -> (string_of_int pos, `Null)
