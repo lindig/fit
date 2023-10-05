@@ -62,7 +62,7 @@ module Decode : sig
       value. *)
 
   val latlon : value -> float
-  (** Corrdinates in latitude or longitude are decoded using [latlon].
+  (** Coordinates in latitude or longitude are decoded using [latlon].
       The [value] is expected to be an [Int]. *)
 end
 
