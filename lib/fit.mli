@@ -48,7 +48,7 @@ val to_json : t -> Yojson.t
 
 module Decode : sig
   (** [value]s reported as part of a [record] are often encoded or
-      scaled. This module provides typial decoders. How values are
+      scaled. This module provides typical decoders. How values are
       decoded depends on the field and the information is not part of
       the FIT file per se but is part of the format definition. *)
 
