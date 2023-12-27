@@ -1,4 +1,4 @@
 (library
  (name fit)
  (public_name fit)
- (libraries angstrom ISO8601 yojson))
+ (libraries angstrom ptime yojson))

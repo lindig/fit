@@ -1,6 +1,7 @@
 # 1.2.0
 
 * Replace Ezjsonm with Yojson, which is more widely used
+* Replace ISO8601 with Ptime
 
 # 1.1.0
 

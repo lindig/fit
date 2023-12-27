@@ -392,8 +392,9 @@ module JSON = struct
     let offset = 631065600.0 in
     match v with
     | Int n ->
-        `String
-          (Int.to_float n +. offset |> ISO8601.Permissive.string_of_datetime)
+        let ts = Int.to_float n +. offset in
+        let pt = Ptime.of_float_s ts in
+        Option.fold pt ~none:`Null ~some:(fun x -> `String (Ptime.to_rfc3339 x))
     | _ -> `Null
 
   let scale scale offset v =
