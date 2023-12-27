@@ -2,6 +2,8 @@
 
 (generate_opam_files true)
 
+(name fit)
+
 (source
  (github lindig/fit))
 
