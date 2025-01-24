@@ -11,6 +11,7 @@ let ( & ) = Int.logand
 let ( >> ) = Int.shift_right
 let fail fmt = Printf.ksprintf fail fmt
 let failwith fmt = Printf.ksprintf failwith fmt
+let sprintf = Printf.sprintf
 
 type arch = BE  (** Big Endian *) | LE  (** Little Endian *)
 
@@ -67,9 +68,9 @@ module Type = struct
       | Enum -> `String "enum"
       | Bytes -> `String "bytes"
       | String -> `String "string"
-      | Int (Signed, bits, _) -> `String (Printf.sprintf "int%d" bits)
-      | Int (Unsigned, bits, _) -> `String (Printf.sprintf "uint%d" bits)
-      | Float bits -> `String (Printf.sprintf "float%d" bits)
+      | Int (Signed, bits, _) -> `String (sprintf "int%d" bits)
+      | Int (Unsigned, bits, _) -> `String (sprintf "uint%d" bits)
+      | Float bits -> `String (sprintf "float%d" bits)
     in
     let f { slot; size; ty } =
       `Assoc [ ("slot", `Int slot); ("size", `Int size); ("type", t ty) ]
@@ -143,7 +144,6 @@ type value =
   | Unknown
 
 let to_string value =
-  let sprintf = Printf.sprintf in
   match value with
   | Enum d -> sprintf "enum(%d)" d
   | String s -> sprintf "string(%s)" s
@@ -477,11 +477,7 @@ module Record = struct
 end
 
 let to_json fit = `List (List.rev_map JSON.record fit.records)
-
-let records fit =
-  List.fold_left
-    (fun xs r -> match Record.record r with Some x -> x :: xs | None -> xs)
-    [] fit.records
+let records fit = List.filter_map Record.record fit.records
 
 let header str =
   let consume = Consume.Prefix in
@@ -500,6 +496,6 @@ let read_file ~max_size path =
   else really_input_string ic size
 
 let read ?(max_size = 100 * 1024) path =
+  let error fmt = Printf.ksprintf (fun str -> Error str) fmt in
   try read_file ~max_size path |> parse
-  with e ->
-    Error (Printf.sprintf "Can't process %s: %s" path (Printexc.to_string e))
+  with e -> error "Can't process %s: %s" path (Printexc.to_string e)
