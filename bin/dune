@@ -4,9 +4,9 @@
  (libraries yojson cmdliner fit rresult))
 
 (executable
- (name svt)
- (public_name fit2svt)
- (libraries yojson cmdliner fit rresult))
+ (name srt)
+ (public_name fit2srt)
+ (libraries yojson cmdliner fit ptime unix rresult))
 
 (rule
  (target build.ml)
