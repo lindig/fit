@@ -3,6 +3,11 @@
  (public_name fit)
  (libraries yojson cmdliner fit rresult))
 
+(executable
+ (name svt)
+ (public_name fit2svt)
+ (libraries yojson cmdliner fit rresult))
+
 (rule
  (target build.ml)
  (deps (universe) build.sh)
