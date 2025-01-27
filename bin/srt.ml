@@ -9,12 +9,29 @@ let cmd = "fit2srt"
 let build =
   Printf.sprintf "Commit: %s Built on: %s" Build.git_revision Build.build_time
 
-let _fit _duration _ts name =
-  Fit.read ~max_size:(1024 * 512) name
+let records path =
+  Fit.read ~max_size:(1024 * 512) path
   |> R.reword_error (fun str -> `Msg str)
-  |> R.failwith_error_msg |> Fit.to_json |> J.pretty_to_channel stdout
+  |> R.failwith_error_msg |> Fit.records
 
-let fit _duration _ts _name = ()
+let select ts duration records =
+  records
+  |> List.filter @@ function
+     | Fit.Record.
+         { timestamp = Some ts'; latitude = Some _; longitude = Some _; _ }
+       when ts' > ts && ts' <= ts +. duration ->
+         true
+     | _ -> false
+
+let json = function
+  | Fit.Record.
+      { timestamp = Some ts; latitude = Some lat; longitude = Some lon; _ } ->
+      `Assoc [ ("ts", `Float ts); ("lat", `Float lat); ("lon", `Float lon) ]
+  | _ -> `Null
+
+let fit duration ts path =
+  records path |> select ts (float duration) |> List.map json |> fun json ->
+  `List json |> J.pretty_to_channel stdout
 
 module Command = struct
   let help =

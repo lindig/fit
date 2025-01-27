@@ -1,6 +1,6 @@
 opam-version: "2.0"
 synopsis: "A parser for Garmin FIT data files"
-description: """\
+description: """
 Fit is library for reading FIT files as they are produced by Garmin and
 other fitness devices. It comes with a small command-line tool to emit
 some of that information as JSON, mostly for debugging. Fit is not
