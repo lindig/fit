@@ -9,10 +9,12 @@ let cmd = "fit2srt"
 let build =
   Printf.sprintf "Commit: %s Built on: %s" Build.git_revision Build.build_time
 
-let fit _duration _ts name =
+let _fit _duration _ts name =
   Fit.read ~max_size:(1024 * 512) name
   |> R.reword_error (fun str -> `Msg str)
   |> R.failwith_error_msg |> Fit.to_json |> J.pretty_to_channel stdout
+
+let fit _duration _ts _name = ()
 
 module Command = struct
   let help =
@@ -36,6 +38,18 @@ module Command = struct
 
   let msg fmt = Printf.ksprintf (fun str -> `Msg str) fmt
 
+  let date_time =
+    let parse str =
+      match Ptime.of_rfc3339 str with
+      | Ok (t, _, _) -> R.ok (Ptime.to_float_s t)
+      | _ -> R.error (msg "Can't parse %s as date-time" str)
+    in
+    let print ppf ts =
+      let t = Ptime.of_float_s ts |> Option.get in
+      Format.fprintf ppf "%s" (Ptime.to_rfc3339 t)
+    in
+    C.Arg.conv ~docv:"TS" (parse, print)
+
   let min_sec =
     let parse str =
       try R.ok (Scanf.sscanf str "%u:%u" (fun min sec -> (min * 60) + sec))
@@ -51,10 +65,9 @@ module Command = struct
           ~doc:"Duration in min:sec of video (and data to extract)")
 
   let timestamp =
-    let now : P.t = Unix.time () |> Ptime.of_float_s |> Option.get in
-    let rfc3339 : string = Ptime.to_rfc3339 now in
+    let now = Unix.time () in
     let doc = "Timestamp for start of video." in
-    C.Arg.(value & pos 0 string rfc3339 & info [] ~docv:"timestamp" ~doc)
+    C.Arg.(value & pos 0 date_time now & info [] ~docv:"timestamp" ~doc)
 
   let path =
     C.Arg.(
