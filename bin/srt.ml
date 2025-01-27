@@ -30,7 +30,7 @@ let json = function
   | _ -> `Null
 
 let fit duration ts path =
-  records path |> select ts (float duration) |> List.map json |> fun json ->
+  records path |> select ts (float duration) |> List.rev_map json |> fun json ->
   `List json |> J.pretty_to_channel stdout
 
 module Command = struct
