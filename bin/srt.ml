@@ -38,7 +38,7 @@ module Command = struct
 
   let msg fmt = Printf.ksprintf (fun str -> `Msg str) fmt
 
-  let date_time =
+  let rfc3339 =
     let parse str =
       match Ptime.of_rfc3339 str with
       | Ok (t, _, _) -> R.ok (Ptime.to_float_s t)
@@ -50,7 +50,7 @@ module Command = struct
     in
     C.Arg.conv ~docv:"TS" (parse, print)
 
-  let min_sec =
+  let mmss =
     let parse str =
       try R.ok (Scanf.sscanf str "%u:%u" (fun min sec -> (min * 60) + sec))
       with _ -> R.error (msg "Can't parse %s as min:sec value" str)
@@ -60,14 +60,14 @@ module Command = struct
 
   let duration =
     C.Arg.(
-      value & opt min_sec 30
+      value & opt mmss 30
       & info [ "d"; "duration" ] ~docv:"DURATION"
           ~doc:"Duration in min:sec of video (and data to extract)")
 
   let timestamp =
     let now = Unix.time () in
     let doc = "Timestamp for start of video." in
-    C.Arg.(value & pos 0 date_time now & info [] ~docv:"timestamp" ~doc)
+    C.Arg.(value & pos 0 rfc3339 now & info [] ~docv:"timestamp" ~doc)
 
   let path =
     C.Arg.(
