@@ -18,16 +18,15 @@ type arch = BE  (** Big Endian *) | LE  (** Little Endian *)
 module Dict = Map.Make (Int)
 
 module Type = struct
-  (** A FIT file holds records of values. Each value has a type and
-      a record is defined by the type of each value. This structure is
-      defined in the FIT file itself. This module captures this type
-      structure. *)
+  (** A FIT file holds records of values. Each value has a type and a record is
+      defined by the type of each value. This structure is defined in the FIT
+      file itself. This module captures this type structure. *)
 
   (** An integer can be signed or unsigned *)
   type sign = Signed | Unsigned
 
-  (** An invalid integer value is either denoted as zero (ZZ) or FF,
-      depending on its type *)
+  (** An invalid integer value is either denoted as zero (ZZ) or FF, depending
+      on its type *)
   type invalid = ZZ | FF
 
   (** base types - a value has one of these types *)
@@ -43,10 +42,9 @@ module Type = struct
     ; size : int  (** in bytes *)
     ; ty : base  (** representation *)
   }
-  (** A record is composed of fields. A field has a size and type. The
-      slot is a number that defines its purpose, like heart rate, and
-      this meaning is assigned in the protocol and not in the binary
-      stream itself *)
+  (** A record is composed of fields. A field has a size and type. The slot is a
+      number that defines its purpose, like heart rate, and this meaning is
+      assigned in the protocol and not in the binary stream itself *)
 
   type record = {
       msg : int
@@ -54,10 +52,10 @@ module Type = struct
     ; fields : field list
     ; dev_fields : int  (** total size in bytes of dev fields *)
   }
-  (** A record is comprised of fields; the overall purpose of the record
-      is captured by the msg number; the binary format of data in the
-      fields respects the arch architecture. [dev_fields] are additional
-      fields which we don't decode but just skip over *)
+  (** A record is comprised of fields; the overall purpose of the record is
+      captured by the msg number; the binary format of data in the fields
+      respects the arch architecture. [dev_fields] are additional fields which
+      we don't decode but just skip over *)
 
   let sum = List.fold_left ( + ) 0
   let size { size; _ } = size
@@ -109,9 +107,9 @@ module Type = struct
     in
     return { slot; size; ty }
 
-  (** parse a [record] definition. We know ahead of time if the record
-      defintion may contain development field definitions, which we then
-      have to read as well *)
+  (** parse a [record] definition. We know ahead of time if the record defintion
+      may contain development field definitions, which we then have to read as
+      well *)
   let record ~dev =
     let* arch =
       int8 0 *> any_int8 >>= function
@@ -152,17 +150,17 @@ let to_string value =
   | Unknown -> "unknown"
 
 type record = { msg : int; fields : (int * value) list }
-(** A [record] is a record of values read from a FIT file. Each
- value is in a slot, which is reported as [int] value. Slots are not
- consecutive and are part of the FIT protocol. *)
+(** A [record] is a record of values read from a FIT file. Each value is in a
+    slot, which is reported as [int] value. Slots are not consecutive and are
+    part of the FIT protocol. *)
 
 type t = { header : header; records : record list }
 (** [t] represents the contents of a FIT file *)
 
-(** [base] reads the next value of type [ty] from the stream and returns
-   it as a [value]. The type [ty] is known because the caller knows the 
-   from the record definition the types of all value. Furthermore, the
-   current endianness [arch] is known as well *)
+(** [base] reads the next value of type [ty] from the stream and returns it as a
+    [value]. The type [ty] is known because the caller knows the from the record
+    definition the types of all value. Furthermore, the current endianness
+    [arch] is known as well *)
 let base arch ty =
   let ff = -1 in
   let float = function
@@ -225,9 +223,9 @@ let base arch ty =
     advance (ty.Type.size - size) >>= fun _ -> return v
   else return v
 
-(** read a record (of type [ty]) of values. Each value in the record is
-    read by [loop] which loops over the types of values we expect to
-    find. Each record field is read by [base]. *)
+(** read a record (of type [ty]) of values. Each value in the record is read by
+    [loop] which loops over the types of values we expect to find. Each record
+    field is read by [base]. *)
 let record arch ty =
   let cmp (x, _) (y, _) = Int.compare x y in
   let sort vs = List.sort cmp vs in
@@ -433,11 +431,11 @@ module JSON = struct
 end
 
 module Record = struct
-  (** The messages with tag 20 (called "record") are at the heart of all
-      FIT files as they contain the measurements. These records may
-      contain different values and their presence cannot be expected.
-      This module provides a representation for such records but covers
-      only the most common values and is not comprehensive *)
+  (** The messages with tag 20 (called "record") are at the heart of all FIT
+      files as they contain the measurements. These records may contain
+      different values and their presence cannot be expected. This module
+      provides a representation for such records but covers only the most common
+      values and is not comprehensive *)
 
   type t = {
       latitude : float option

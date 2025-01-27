@@ -34,11 +34,21 @@ module Command = struct
     ; `P build
     ]
 
+  let msg fmt = Printf.ksprintf (fun str -> `Msg str) fmt
+
+  let min_sec =
+    let parse str =
+      try R.ok (Scanf.sscanf str "%u:%u" (fun min sec -> (min * 60) + sec))
+      with _ -> R.error (msg "Can't parse %s as min:sec value" str)
+    in
+    let print ppf sec = Format.fprintf ppf "%d:%0d" (sec / 60) (sec mod 60) in
+    C.Arg.conv ~docv:"S" (parse, print)
+
   let duration =
     C.Arg.(
-      value & opt float 30.0
+      value & opt min_sec 30
       & info [ "d"; "duration" ] ~docv:"DURATION"
-          ~doc:"Duration in seconds of video (and data to extract)")
+          ~doc:"Duration in min:sec of video (and data to extract)")
 
   let timestamp =
     let now : P.t = Unix.time () |> Ptime.of_float_s |> Option.get in
