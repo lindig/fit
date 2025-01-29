@@ -9,10 +9,20 @@ let cmd = "fit2srt"
 let build =
   Printf.sprintf "Commit: %s Built on: %s" Build.git_revision Build.build_time
 
+let rec iter2 f xs =
+  match xs with
+  | [] -> ()
+  | [ _ ] -> ()
+  | x :: (y :: _ as ys) ->
+      f x y;
+      iter2 f ys
+
+let _iter2 = iter2
+
 let records path =
   Fit.read ~max_size:(1024 * 512) path
   |> R.reword_error (fun str -> `Msg str)
-  |> R.failwith_error_msg |> Fit.records
+  |> R.failwith_error_msg |> Fit.records |> List.rev
 
 let select ts duration records =
   records
@@ -30,7 +40,7 @@ let json = function
   | _ -> `Null
 
 let fit duration ts path =
-  records path |> select ts (float duration) |> List.rev_map json |> fun json ->
+  records path |> select ts (float duration) |> List.map json |> fun json ->
   `List json |> J.pretty_to_channel stdout
 
 module Command = struct
