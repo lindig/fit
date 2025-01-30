@@ -9,15 +9,48 @@ let cmd = "fit2srt"
 let build =
   Printf.sprintf "Commit: %s Built on: %s" Build.git_revision Build.build_time
 
-let rec iter2 f xs =
-  match xs with
-  | [] -> ()
-  | [ _ ] -> ()
-  | x :: (y :: _ as ys) ->
-      f x y;
-      iter2 f ys
+let round x = floor (x +. 0.5)
 
-let _iter2 = iter2
+let round_dfrac d x =
+  if x -. round x = 0. then x
+  else
+    (* x is an integer. *)
+    let m = 10. ** float d in
+    (* m moves 10^-d to 1. *)
+    floor ((x *. m) +. 0.5) /. m
+
+let _round0 = round
+let _round1 = round_dfrac 1
+let _round2 = round_dfrac 2
+
+let split500 v =
+  let time = int_of_float ((500.0 /. v) +. 0.5) in
+  (* round to nearest sec *)
+  let min = time / 60 in
+  let sec = time mod 60 in
+  Printf.sprintf "%d:%02d" min sec
+
+module Span = struct
+  (* A span is a time span in seconds *)
+
+  let to_string t =
+    let int = Float.to_int in
+    let hh = t /. 3600. |> modf |> snd in
+    let mm = (t -. (hh *. 3600.)) /. 60. |> modf |> snd in
+    let ss = t -. (hh *. 3600.) -. (mm *. 60.) in
+    Printf.sprintf "%02d:%02d:%05.2f" (int hh) (int mm) ss
+end
+
+let iter2 n xs f =
+  let rec loop n xs =
+    match xs with
+    | [] -> ()
+    | [ _ ] -> ()
+    | x :: (y :: _ as ys) ->
+        f n x y;
+        loop (n + 1) ys
+  in
+  loop n xs
 
 let records path =
   Fit.read ~max_size:(1024 * 512) path
@@ -28,10 +61,26 @@ let select ts duration records =
   records
   |> List.filter @@ function
      | Fit.Record.
-         { timestamp = Some ts'; latitude = Some _; longitude = Some _; _ }
+         {
+           timestamp = Some ts'
+         ; latitude = Some _
+         ; longitude = Some _
+         ; speed = Some _
+         ; cadence = Some _
+         ; distance = Some _
+         ; _
+         }
        when ts' > ts && ts' <= ts +. duration ->
          true
      | _ -> false
+
+let srt ~n ~t_start ~t_end ~spm ~v =
+  Printf.printf {|
+%d
+%s --> %s
+%.1f %s
+|} n (Span.to_string t_start)
+    (Span.to_string t_end) spm (split500 v)
 
 let json = function
   | Fit.Record.
@@ -39,9 +88,18 @@ let json = function
       `Assoc [ ("ts", `Float ts); ("lat", `Float lat); ("lon", `Float lon) ]
   | _ -> `Null
 
-let fit duration ts path =
+let _fit duration ts path =
   records path |> select ts (float duration) |> List.map json |> fun json ->
   `List json |> J.pretty_to_channel stdout
+
+let fit duration ts path =
+  let rs = records path |> select ts (float duration) in
+  iter2 1 rs @@ fun n x y ->
+  let t_start = Option.get x.Fit.Record.timestamp -. ts in
+  let t_end = Option.get y.Fit.Record.timestamp -. ts in
+  let v = Option.get y.Fit.Record.speed in
+  let spm = Option.get y.Fit.Record.cadence in
+  srt ~n ~t_start ~t_end ~spm ~v
 
 module Command = struct
   let help =
