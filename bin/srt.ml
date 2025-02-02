@@ -74,13 +74,13 @@ let select ts duration records =
          true
      | _ -> false
 
-let srt ~n ~t_start ~t_end ~spm ~v =
+let srt ~n ~t_start ~t_end ~spm ~v ~dps =
   Printf.printf {|
 %d
 %s --> %s
-%.1f %s
+%.1f %s/500 %.1fm
 |} n (Span.to_string t_start)
-    (Span.to_string t_end) spm (split500 v)
+    (Span.to_string t_end) spm (split500 v) dps
 
 let json = function
   | Fit.Record.
@@ -99,7 +99,10 @@ let fit duration ts path =
   let t_end = Option.get y.Fit.Record.timestamp -. ts in
   let v = Option.get y.Fit.Record.speed in
   let spm = Option.get y.Fit.Record.cadence in
-  srt ~n ~t_start ~t_end ~spm ~v
+  let d_start = Option.get x.Fit.Record.distance in
+  let d_end = Option.get y.Fit.Record.distance in
+  let dps = d_end -. d_start in
+  srt ~n ~t_start ~t_end ~spm ~v ~dps
 
 module Command = struct
   let help =
