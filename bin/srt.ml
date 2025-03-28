@@ -92,7 +92,14 @@ let _fit duration ts path =
   records path |> select ts (float duration) |> List.map json |> fun json ->
   `List json |> J.pretty_to_channel stdout
 
+(** Distance per stroke in SpeedCoach data: data points are aligned to full
+    seconds. But a stroke may have ended earlier. The cycle length is the
+    distance travled since the end of the stroke to the full seconds. So the
+    distance per stroke is the distance between two data point points, minus the
+    cycle length. *)
+
 let fit duration ts path =
+  let default none x = Option.fold ~none ~some:Fun.id x in
   let rs = records path |> select ts (float duration) in
   iter2 1 rs @@ fun n x y ->
   let t_start = Option.get x.Fit.Record.timestamp -. ts in
@@ -101,7 +108,8 @@ let fit duration ts path =
   let spm = Option.get y.Fit.Record.cadence in
   let d_start = Option.get x.Fit.Record.distance in
   let d_end = Option.get y.Fit.Record.distance in
-  let dps = d_end -. d_start in
+  let cycle_length = default 0.0 y.Fit.Record.cycle_length in
+  let dps = d_end -. d_start -. cycle_length in
   srt ~n ~t_start ~t_end ~spm ~v ~dps
 
 module Command = struct
