@@ -57,6 +57,8 @@ let records path =
   |> R.reword_error (fun str -> `Msg str)
   |> R.failwith_error_msg |> Fit.records |> List.rev
 
+(** select records that are within the desired time frame and have all fields
+    defined that we are interested in *)
 let select ts duration records =
   records
   |> List.filter @@ function
