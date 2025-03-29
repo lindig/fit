@@ -1,3 +1,5 @@
+(* Emit SRT sub titles for FIT data *)
+
 open Rresult
 module C = Cmdliner
 module J = Yojson
@@ -41,7 +43,10 @@ module Span = struct
     Printf.sprintf "%02d:%02d:%05.2f" (int hh) (int mm) ss
 end
 
-let iter2 n xs f =
+(** interate over all adjacent values in xs; f is passed two values from xs and
+    a counter *)
+let iter2 : int -> 'a list -> (int -> 'a -> 'a -> unit) -> unit =
+ fun n xs f ->
   let rec loop n xs =
     match xs with
     | [] -> ()
