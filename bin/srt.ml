@@ -60,7 +60,7 @@ let iter2 : int -> 'a list -> (int -> 'a -> 'a -> unit) -> unit =
 let records path =
   Fit.read ~max_size:(1024 * 512) path
   |> R.reword_error (fun str -> `Msg str)
-  |> R.failwith_error_msg |> Fit.records |> List.rev
+  |> R.failwith_error_msg |> Fit.records
 
 (** select records that are within the desired time frame and have all fields
     defined that we are interested in *)

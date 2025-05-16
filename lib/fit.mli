@@ -24,7 +24,7 @@ type record = { msg : int; fields : (int * value) list }
     interpretation is provided *)
 
 type t = { header : header; records : record list }
-(** A FIT file has a header and a list of records (in reversed order) *)
+(** A FIT file has a header and a list of records *)
 
 val parse : string -> (t, string) result
 (** [parse fit] parses the binary content [fit], typically loaded from a file *)

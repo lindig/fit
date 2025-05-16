@@ -309,7 +309,7 @@ module File = struct
     header >>= fun header ->
     pos >>= fun offset ->
     blocks xx (header.length + offset) >>= fun (_, records) ->
-    return { header; records }
+    return { header; records = List.rev records }
 end
 
 module MSG = struct
@@ -476,7 +476,7 @@ module Record = struct
     | _ -> None
 end
 
-let to_json fit = `List (List.rev_map JSON.record fit.records)
+let to_json fit = `List (List.map JSON.record fit.records)
 let records fit = List.filter_map Record.record fit.records
 
 let header str =
