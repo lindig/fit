@@ -411,6 +411,7 @@ module JSON = struct
     | 20, 4, v -> ("cadence", scale 1 0 v)
     | 20, 5, v -> ("distance", scale 100 0 v)
     | 20, 6, v -> ("speed", scale 1000 0 v)
+    | 20, 7, v -> ("power", scale 1 0 v)
     | 20, 73, v -> ("enhanced_speed", scale 1000 0 v)
     | 20, 13, v -> ("temperature", scale 1 0 v)
     | 20, 12, v -> ("cycle_length", scale 100 0 v)
@@ -444,6 +445,7 @@ module Record = struct
     ; altitude : float option
     ; heartrate : float option
     ; cadence : float option
+    ; power : float option
     ; speed : float option
     ; distance : float option
     ; temperature : float option
@@ -468,6 +470,7 @@ module Record = struct
             ; heartrate = get 3 fields (Decode.scale 1 0)
             ; cadence = get 4 fields (Decode.scale 1 0)
             ; distance = get 5 fields (Decode.scale 100 0)
+            ; power = get 7 fields (Decode.scale 1 0)
             ; temperature = get 13 fields (Decode.scale 1 0)
             ; speed = get 6 fields (Decode.scale 1000 0)
             ; cycle_length = get 12 fields (Decode.scale 100 0)
