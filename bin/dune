@@ -1,11 +1,13 @@
 (executable
  (name main)
  (public_name fit)
+ (modules build main)
  (libraries yojson cmdliner fit rresult))
 
 (executable
  (name srt)
  (public_name fit2srt)
+ (modules srt build)
  (libraries yojson cmdliner fit ptime unix rresult))
 
 (rule
