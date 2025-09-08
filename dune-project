@@ -22,7 +22,7 @@
   (ocaml
    (>= 4.08.0))
   (dune
-   (>= 2.0))
+   (>= 3.0))
   (cmdliner
    (>= 1.1.0))
   (angstrom
