@@ -1,2 +1,1 @@
-
-available: [os-family != "windows"]
+available: [os-family != "windows" & arch != "arm32" & arch != "x86_32"]

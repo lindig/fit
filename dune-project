@@ -1,4 +1,4 @@
-(lang dune 2.7)
+(lang dune 3.0)
 
 (generate_opam_files true)
 
@@ -22,7 +22,7 @@
   (ocaml
    (>= 4.08.0))
   (dune
-   (>= 3.0))
+   (>= 3.2))
   (cmdliner
    (>= 1.1.0))
   (angstrom
