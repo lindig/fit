@@ -1,3 +1,8 @@
+# 1.3.0
+
+* Add experimental tool srt that can generate video sub titles from FIT
+  data.
+
 # 1.2.0
 
 * Replace Ezjsonm with Yojson, which is more widely used

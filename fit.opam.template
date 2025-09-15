@@ -1,2 +1,3 @@
 
-available: [os-family != "windows"]
+x-maintenance-intent: ["(latest)"]
+available: [os-family != "windows" & arch != "arm32" & arch != "x86_32"]
