@@ -79,6 +79,7 @@ module Record : sig
     ; distance : float option
     ; temperature : float option
     ; cycle_length : float option
+    ; total_cycles : float option
   }
 end
 

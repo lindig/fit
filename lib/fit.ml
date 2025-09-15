@@ -450,6 +450,7 @@ module Record = struct
     ; distance : float option
     ; temperature : float option
     ; cycle_length : float option
+    ; total_cycles : float option
   }
 
   (** if decoding fails, we record the field as not present *)
@@ -474,6 +475,7 @@ module Record = struct
             ; temperature = get 13 fields (Decode.scale 1 0)
             ; speed = get 6 fields (Decode.scale 1000 0)
             ; cycle_length = get 12 fields (Decode.scale 100 0)
+            ; total_cycles = get 19 fields (Decode.scale 1 0)
             }
         with _ -> None)
     | _ -> None
