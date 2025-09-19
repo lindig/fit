@@ -83,5 +83,11 @@ module Record : sig
   }
 end
 
+module Device : sig
+  type t = { serial : int option; manufacturer : int option }
+end
+
 val records : t -> Record.t list
 (** Extract and decode common fields *)
+
+val device : t -> Device.t

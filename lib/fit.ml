@@ -380,6 +380,12 @@ module Decode = struct
     | Float x -> (x /. scale) -. offset
     | v -> failwith "%s: unexpected value: %s" __LOC__ (to_string v)
 
+  let scale' scale offset v =
+    match v with
+    | Int x -> (x / scale) - offset
+    | Float x -> Float.((x /. float scale) -. float offset |> round |> to_int)
+    | v -> failwith "%s: unexpected value: %s" __LOC__ (to_string v)
+
   let latlon = function
     | Int x -> Int.to_float x *. 180.0 /. 2147483648.0
     | v -> failwith "%s: unexpected value: %s" __LOC__ (to_string v)
@@ -431,6 +437,12 @@ module JSON = struct
       (("msg", `String (MSG.lookup r.msg)) :: List.map (field r.msg) r.fields)
 end
 
+(** if decoding fails, we record the field as not present *)
+let get slot fields decoder =
+  List.assoc_opt slot fields |> function
+  | Some x -> ( try Some (decoder x) with _ -> None)
+  | None -> None
+
 module Record = struct
   (** The messages with tag 20 (called "record") are at the heart of all FIT
       files as they contain the measurements. These records may contain
@@ -452,12 +464,6 @@ module Record = struct
     ; cycle_length : float option
     ; total_cycles : float option
   }
-
-  (** if decoding fails, we record the field as not present *)
-  let get slot fields decoder =
-    List.assoc_opt slot fields |> function
-    | Some x -> ( try Some (decoder x) with _ -> None)
-    | None -> None
 
   let record = function
     | { msg = 20; fields } -> (
@@ -481,8 +487,30 @@ module Record = struct
     | _ -> None
 end
 
+module Device = struct
+  type t = { serial : int option; manufacturer : int option }
+
+  let null = { serial = None; manufacturer = None }
+
+  let device = function
+    | { msg = 253; fields } -> (
+        try
+          Some
+            {
+              serial = get 3 fields (Decode.scale' 1 0)
+            ; manufacturer = get 2 fields (Decode.scale' 1 0)
+            }
+        with _ -> None)
+    | _ -> None
+end
+
 let to_json fit = `List (List.map JSON.record fit.records)
 let records fit = List.filter_map Record.record fit.records
+
+let device fit =
+  List.filter_map Device.device fit.records |> function
+  | [] -> Device.null
+  | x :: _ -> x
 
 let header str =
   let consume = Consume.Prefix in
