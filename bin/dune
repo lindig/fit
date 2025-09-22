@@ -8,7 +8,7 @@
  (name srt)
  (public_name fit2srt)
  (modules srt build)
- (libraries yojson cmdliner fit ptime unix rresult))
+ (libraries yojson cmdliner fit ptime unix))
 
 (rule
  (target build.ml)
