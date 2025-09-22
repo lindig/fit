@@ -2,7 +2,7 @@
  (name main)
  (public_name fit)
  (modules build main)
- (libraries yojson cmdliner fit rresult))
+ (libraries yojson cmdliner fit))
 
 (executable
  (name srt)

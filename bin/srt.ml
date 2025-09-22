@@ -1,6 +1,5 @@
 (* Emit SRT sub titles for FIT data *)
 
-open Rresult
 module C = Cmdliner
 module J = Yojson
 module F = Fit
@@ -58,9 +57,7 @@ let iter2 : int -> 'a list -> (int -> 'a -> 'a -> unit) -> unit =
   loop n xs
 
 let records path =
-  Fit.read ~max_size:(1024 * 512) path
-  |> R.reword_error (fun str -> `Msg str)
-  |> R.failwith_error_msg |> Fit.records
+  Fit.read ~max_size:(1024 * 512) path |> Result.get_ok |> Fit.records
 
 (** select records that are within the desired time frame and have all fields
     defined that we are interested in *)
@@ -144,8 +141,8 @@ module Command = struct
   let rfc3339 =
     let parse str =
       match Ptime.of_rfc3339 str with
-      | Ok (t, _, _) -> R.ok (Ptime.to_float_s t)
-      | _ -> R.error (msg "Can't parse %s as date-time" str)
+      | Ok (t, _, _) -> Result.ok (Ptime.to_float_s t)
+      | _ -> Result.error (msg "Can't parse %s as date-time" str)
     in
     let print ppf ts =
       let t = Ptime.of_float_s ts |> Option.get in
@@ -155,8 +152,8 @@ module Command = struct
 
   let mmss =
     let parse str =
-      try R.ok (Scanf.sscanf str "%u:%u" (fun min sec -> (min * 60) + sec))
-      with _ -> R.error (msg "Can't parse %s as min:sec value" str)
+      try Result.ok (Scanf.sscanf str "%u:%u" (fun min sec -> (min * 60) + sec))
+      with _ -> Result.error (msg "Can't parse %s as min:sec value" str)
     in
     let print ppf sec = Format.fprintf ppf "%d:%0d" (sec / 60) (sec mod 60) in
     C.Arg.conv ~docv:"S" (parse, print)
