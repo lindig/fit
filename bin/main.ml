@@ -5,9 +5,12 @@ module F = Fit
 let build =
   Printf.sprintf "Commit: %s Built on: %s" Build.git_revision Build.build_time
 
+let ( let* ) = Result.bind
+
 let fit name =
-  Fit.read ~max_size:(1024 * 512) name
-  |> Result.get_ok |> Fit.to_json |> J.pretty_to_channel stdout
+  let* fit = Fit.read ~max_size:(1024 * 512) name in
+  Fit.to_json fit |> J.pretty_to_channel stdout;
+  Result.ok ()
 
 module Command = struct
   let help =
@@ -40,5 +43,5 @@ module Command = struct
     C.(Cmd.v info Term.(const fit $ path))
 end
 
-let main () = C.Cmd.eval Command.fit |> exit
+let main () = C.Cmd.eval_result Command.fit |> exit
 let () = if !Sys.interactive then () else main ()
