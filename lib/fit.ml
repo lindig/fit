@@ -615,25 +615,22 @@ module Device = struct
     | 273 -> "evesports"
     | n -> string_of_int n
 
-  let device = function
-    | { msg = 253; fields } -> (
+  let device fit =
+    List.find_opt (function { msg = 253; _ } -> true | _ -> false) fit.records
+    |> function
+    | Some { msg = 253; fields } -> (
         try
-          Some
-            {
-              serial = get 3 fields (Decode.scale' 1 0)
-            ; manufacturer = get 2 fields (Decode.scale' 1 0)
-            }
-        with _ -> None)
-    | _ -> None
+          {
+            serial = get 3 fields (Decode.scale' 1 0)
+          ; manufacturer = get 2 fields (Decode.scale' 1 0)
+          }
+        with _ -> null)
+    | _ -> null
 end
 
 let to_json fit = `List (List.map JSON.record fit.records)
 let records fit = List.filter_map Record.record fit.records
-
-let device fit =
-  List.filter_map Device.device fit.records |> function
-  | [] -> Device.null
-  | x :: _ -> x
+let device fit = Device.device fit
 
 let header str =
   let consume = Consume.Prefix in
