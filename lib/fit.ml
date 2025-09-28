@@ -616,9 +616,9 @@ module Device = struct
     | n -> string_of_int n
 
   let device fit =
-    List.find_opt (function { msg = 253; _ } -> true | _ -> false) fit.records
+    List.find_opt (function { msg = 23; _ } -> true | _ -> false) fit.records
     |> function
-    | Some { msg = 253; fields } -> (
+    | Some { msg = 23; fields } -> (
         try
           {
             serial = get 3 fields (Decode.scale' 1 0)
