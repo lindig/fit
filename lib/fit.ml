@@ -4,6 +4,7 @@
 open Angstrom
 
 let defer finally = Fun.protect ~finally
+let arch32 = match Sys.word_size with 32 -> true | _ -> false
 
 (** redefine & as bitwise operation, && is still logical and *)
 let ( & ) = Int.logand
@@ -138,6 +139,8 @@ type value =
   | Enum of int
   | String of string
   | Int of int
+  | Int32 of Int32.t
+  | Int64 of Int64.t
   | Float of float
   | Unknown
 
@@ -146,6 +149,8 @@ let to_string value =
   | Enum d -> sprintf "enum(%d)" d
   | String s -> sprintf "string(%s)" s
   | Int i -> sprintf "int(%d)" i
+  | Int32 i -> sprintf "int(%ld)" i
+  | Int64 i -> sprintf "int(%Ld)" i
   | Float f -> sprintf "float(%f)" f
   | Unknown -> "unknown"
 
@@ -163,6 +168,7 @@ type t = { header : header; records : record list }
     [arch] is known as well *)
 let base arch ty =
   let ff = -1 in
+  let ff' = Int32.minus_one in
   let float = function
     | x when Float.is_nan x -> return Unknown
     | x when x = Float.infinity -> return Unknown
@@ -179,12 +185,16 @@ let base arch ty =
     return (if x = unk then Unknown else Int x)
   in
   let int32 ukn x =
-    let x = Int32.to_int x in
-    return (if x = ukn then Unknown else Int x)
+    match arch32 with
+    | _ when x = ukn -> return Unknown
+    | true -> return (Int32 x)
+    | false -> return (Int (Int32.to_int x))
   in
   let uint32 unk x =
-    let x = Int32.to_int x land 0xffff_ffff in
-    return (if x = unk then Unknown else Int x)
+    match arch32 with
+    | _ when x = unk -> return Unknown
+    | true -> return (Int64 Int64.(of_int32 x |> logand 0xFFFF_FFFF_L))
+    | false -> return (Int Int32.(to_int x land 0xffff_ffff))
   in
   let value =
     match (arch, ty.Type.ty) with
@@ -194,18 +204,18 @@ let base arch ty =
     | __, Type.Int (Signed, 8, FF) -> any_int8 >>= int ff
     | BE, Type.Int (Signed, 16, FF) -> BE.any_int16 >>= int ff
     | LE, Type.Int (Signed, 16, FF) -> LE.any_int16 >>= int ff
-    | BE, Type.Int (Signed, 32, FF) -> BE.any_int32 >>= int32 ff
-    | LE, Type.Int (Signed, 32, FF) -> LE.any_int32 >>= int32 ff
+    | BE, Type.Int (Signed, 32, FF) -> BE.any_int32 >>= int32 ff'
+    | LE, Type.Int (Signed, 32, FF) -> LE.any_int32 >>= int32 ff'
     | __, Type.Int (Unsigned, 8, ZZ) -> any_uint8 >>= uint8 0
     | LE, Type.Int (Unsigned, 16, ZZ) -> LE.any_uint16 >>= uint16 0
     | BE, Type.Int (Unsigned, 16, ZZ) -> BE.any_uint16 >>= uint16 0
-    | LE, Type.Int (Unsigned, 32, ZZ) -> LE.any_int32 >>= uint32 0
-    | BE, Type.Int (Unsigned, 32, ZZ) -> BE.any_int32 >>= uint32 0
+    | LE, Type.Int (Unsigned, 32, ZZ) -> LE.any_int32 >>= uint32 0l
+    | BE, Type.Int (Unsigned, 32, ZZ) -> BE.any_int32 >>= uint32 0l
     | __, Type.Int (Unsigned, 8, FF) -> any_uint8 >>= uint8 0xff
     | LE, Type.Int (Unsigned, 16, FF) -> LE.any_uint16 >>= uint16 0xffff
     | BE, Type.Int (Unsigned, 16, FF) -> BE.any_uint16 >>= uint16 0xffff
-    | LE, Type.Int (Unsigned, 32, FF) -> LE.any_int32 >>= uint32 0xffff_ffff
-    | BE, Type.Int (Unsigned, 32, FF) -> BE.any_int32 >>= uint32 0xffff_ffff
+    | LE, Type.Int (Unsigned, 32, FF) -> LE.any_int32 >>= uint32 0xffff_ffff_l
+    | BE, Type.Int (Unsigned, 32, FF) -> BE.any_int32 >>= uint32 0xffff_ffff_l
     | BE, Type.Float 32 -> BE.any_float >>= float
     | LE, Type.Float 32 -> LE.any_float >>= float
     | BE, Type.Float 64 -> BE.any_double >>= float
@@ -426,6 +436,8 @@ module JSON = struct
     | _, _, Enum n -> (string_of_int pos, `Int n)
     | _, _, String s -> (string_of_int pos, `String s)
     | _, _, Int i -> (string_of_int pos, `Int i)
+    | _, _, Int32 i -> (string_of_int pos, `Float (Int32.to_float i))
+    | _, _, Int64 i -> (string_of_int pos, `Float (Int64.to_float i))
     | _, _, Float f when Float.is_nan f -> (string_of_int pos, `Null)
     | _, _, Float f -> (string_of_int pos, `Float f)
     | _, _, Unknown -> (string_of_int pos, `Null)

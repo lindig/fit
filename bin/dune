@@ -1,6 +1,7 @@
 (executable
  (name main)
  (public_name fit)
+ (modes native)
  (modules build main)
  (libraries yojson cmdliner fit))
 
