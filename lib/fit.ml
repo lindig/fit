@@ -640,8 +640,12 @@ module Device = struct
     | _ -> null
 end
 
-let to_json fit = `List (List.map JSON.record fit.records)
-let records fit = List.filter_map Record.record fit.records
+let to_json fit = `List (List.rev_map JSON.record fit.records |> List.rev)
+
+let records fit =
+  fit.records |> List.rev_map Record.record |> List.filter Option.is_some
+  |> List.rev_map Option.get
+
 let device fit = Device.device fit
 
 let header str =

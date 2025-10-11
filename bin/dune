@@ -1,9 +1,19 @@
 (executable
  (name main)
  (public_name fit)
- (modes native)
+ (modes native js)
  (modules build main)
- (libraries yojson cmdliner fit))
+ (libraries yojson cmdliner fit)
+ (js_of_ocaml
+  (flags
+   (:standard
+    ; General debugging flags (recommended for stack traces)
+    --debug-info
+    --no-inline
+    --source-map
+    ; The specific flag to automatically attach JS errors to OCaml exceptions
+    --enable
+    with-js-error))))
 
 (executable
  (name srt)
