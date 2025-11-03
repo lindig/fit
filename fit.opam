@@ -20,7 +20,7 @@ depends: [
   "ptime" {>= "1.1.0"}
   "odoc" {with-doc}
 ]
-available: os-family != "windows" & arch != "arm32" & arch != "x86_32"
+available: os-family != "windows"
 build: [
   ["dune" "subst"] {dev}
   [

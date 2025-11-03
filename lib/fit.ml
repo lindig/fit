@@ -119,11 +119,11 @@ module Type = struct
       | n -> fail "expected 0 or 1 in byte for endianness, found %d" n
     in
     let* msg = match arch with LE -> LE.any_uint16 | BE -> BE.any_uint16 in
-    let* n = any_int8 in
+    let* n = any_uint8 in
     let* fields = count n field in
     let dev_fields =
       if dev then
-        let* n = any_int8 in
+        let* n = any_uint8 in
         let* dev_fields = count n field in
         return dev_fields
       else return []
