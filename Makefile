@@ -33,6 +33,9 @@ format:
 %.mli: %.ml
 	dune exec -- ocaml-print-intf $<
 
+changes:
+	git log $$(git describe --tags --abbrev=0)..HEAD --pretty=format:"* %s"
+
 release:
 	dune-release tag
 	dune-release distrib
