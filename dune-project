@@ -21,8 +21,6 @@
  (depends
   (ocaml
    (>= 4.08.0))
-  (dune
-   (>= 3.20))
   (cmdliner
    (>= 1.1.0))
   (angstrom
