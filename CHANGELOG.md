@@ -1,3 +1,11 @@
+# 1.4.1
+
+* 4011ef1 2025-11-17 Simplify dune-project
+* f30937c 2025-11-16 Add url.sh
+* ecbee25 2025-11-16 Update opam template
+* ba6a7c5 2025-11-16 Fix typos in meta data
+* 0a916fe 2025-11-04 Fix: use any_uint8 for counter
+
 # 1.3.0
 
 * Add experimental tool srt that can generate video sub titles from FIT
