@@ -7,8 +7,8 @@ cat <<EOF
 url {
   src: "$url"
   checksum: [
-    "sha256=$(sha256 -q $V.zip || sha256sum $V.zip | awk '{print $1}')"
-    "md5=$(md5 -q $V.zip || md5sum $V.zip | awk '{print $1}')"
+    "sha256=$(sha256sum $V.zip | awk '{print $1}')"
+    "md5=$(md5sum $V.zip | awk '{print $1}')"
   ]
 }
 EOF
