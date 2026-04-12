@@ -1,4 +1,6 @@
 (library
  (name fit)
  (public_name fit)
- (libraries angstrom ptime yojson))
+ (preprocess
+   (pps landmarks-ppx --auto))
+ (libraries landmarks angstrom ptime yojson))

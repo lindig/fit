@@ -3,10 +3,13 @@
 # convenience during development
 #
 
+export OCAML_LANDMARKS=output=landmarks.txt,time,allocation
+F = ./_build/default/bin/main.exe
+
 .PHONY: all install test clean uninstall format utop
 
 all:
-	dune build
+	dune build --instrument-with landmarks
 
 install: all
 	dune install fit
@@ -16,6 +19,9 @@ uninstall:
 
 test:
 	dune runtest
+
+perf:
+	$F ./data/xpress-4x-2022-08-03.fit > /dev/null
 
 clean:
 	dune clean
