@@ -7,10 +7,23 @@ let build =
 
 let ( let* ) = Result.bind
 
-let fit name =
+let map f xs =
+  let rec loop acc = function
+    | x :: xs -> (
+        match f x with Ok r -> loop (r :: acc) xs | Error _ as err -> err)
+    | [] -> Ok (List.rev acc)
+  in
+  loop [] xs
+
+let process name =
   let* fit = Fit.read ~max_size:(1024 * 512) name in
-  Fit.to_json fit |> J.pretty_to_channel stdout;
-  Result.ok ()
+  let json = `Assoc [ ("file", `String name); ("fit", Fit.to_json fit) ] in
+  Ok json
+
+let fit names =
+  let* json = map process names in
+  J.pretty_to_channel stdout (`List json);
+  Ok ()
 
 module Command = struct
   let help =
@@ -20,8 +33,8 @@ module Command = struct
         {|Values
            in FIT files are often scaled. Currently no scaling is
            implemented and the values are reported raw as they are read
-           from the binary. The meaning of fields in a record depend 
-           on the message number of the record, which is defined by 
+           from the binary. The meaning of fields in a record depend
+           on the message number of the record, which is defined by
            the FIT protocol. Currently the $(mname) command has no knowledge
            about these.  |}
     ; `S "MORE HELP"
@@ -32,15 +45,15 @@ module Command = struct
     ; `P build
     ]
 
-  let path =
+  let paths =
     C.Arg.(
-      value & pos 0 file "file.fit"
-      & info [] ~docv:"file.fit" ~doc:"FIT file to process.")
+      value & pos_all file []
+      & info [] ~docv:"file.fit" ~doc:"Files to analyse in FIT format")
 
   let fit =
-    let doc = "process FIT file" in
+    let doc = "process FIT files" in
     let info = C.Cmd.info "fit" ~doc ~man:help in
-    C.(Cmd.v info Term.(const fit $ path))
+    C.(Cmd.v info Term.(const fit $ paths))
 end
 
 let main () = C.Cmd.eval_result Command.fit |> exit
