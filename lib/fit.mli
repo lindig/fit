@@ -70,26 +70,32 @@ module Record : sig
   (** decode "record" messages *)
 
   type t = {
-      latitude : float option
-    ; longitude : float option
-    ; timestamp : float option
-    ; altitude : float option
-    ; heartrate : float option
-    ; cadence : float option
-    ; power : float option
-    ; speed : float option
-    ; distance : float option
-    ; temperature : float option
+      latitude : float option (* degrees *)
+    ; longitude : float option (* degrees *)
+    ; timestamp : float option (* Unix Epoch *)
+    ; altitude : float option (* meter *)
+    ; heartrate : float option (* per second *)
+    ; cadence : float option (* per second *)
+    ; power : float option (* Watt *)
+    ; speed : float option (* m/s *)
+    ; distance : float option (* m *)
+    ; temperature : float option (* degree celcious *)
     ; cycle_length : float option
-    ; total_cycles : float option
+    ; total_cycles : float option (* count *)
   }
 end
 
 module Device : sig
   type t = { serial : int option; manufacturer : int option }
+  (** Report basic information about the device that produced the FIT file we
+      are analyzing *)
+
+  val manufacturer : t -> string option
+  (** name of manufacturer *)
 end
 
 val records : t -> Record.t list
-(** Extract and decode common fields *)
+(** Extract and decode common fields of all records *)
 
 val device : t -> Device.t
+(** Obtain device information *)

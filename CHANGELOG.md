@@ -1,3 +1,12 @@
+# 1.5.0
+
+* Prefer enhanced_speed over speed in Fit.Records
+* fit tool: process multiple files at once
+* Improve portability of url.sh
+* Bump dune to 3.20
+
+The JSON produced by the fit binary has changed. The tool now accepts multiple FIT files as input and the output reports each file.
+
 # 1.4.1
 
 * 4011ef1 2025-11-17 Simplify dune-project
