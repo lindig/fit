@@ -251,7 +251,7 @@ module File = struct
   let _dump dict =
     Dict.bindings dict
     |> List.rev_map (fun (k, v) -> (string_of_int k, Type.json v))
-    |> fun x -> `Assoc x
+    |> fun x -> `Assoc x |> Yojson.pretty_to_channel stderr
 
   let header =
     any_int8 >>= function
@@ -306,8 +306,8 @@ module File = struct
             fail "corrupted file? No type for key=%d offset=%d at %s" key p
               __LOC__)
     | n ->
-        (* Printf.eprintf "%06x tag=0x%x key=%d\n" p tag key; *)
-        (* _dump dict; *)
+        Printf.eprintf "%06x tag=0x%x key=%d\n" p tag key;
+        _dump dict;
         fail "unexpected block with tag 0x%x at offset %d" n p
 
   let rec blocks xx finish =
