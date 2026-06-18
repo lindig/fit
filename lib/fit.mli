@@ -1,5 +1,8 @@
 (* A parser for FIT files *)
 
+val debug : bool ref
+(* enable debugging *)
+
 type header = {
     protocol : int
   ; profile : int

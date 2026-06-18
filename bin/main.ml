@@ -20,7 +20,8 @@ let process name =
   let json = `Assoc [ ("file", `String name); ("fit", Fit.to_json fit) ] in
   Ok json
 
-let fit names =
+let fit debug names =
+  Fit.debug := debug;
   let* json = map process names in
   J.pretty_to_channel stdout (`List json);
   Ok ()
@@ -45,6 +46,10 @@ module Command = struct
     ; `P build
     ]
 
+  let debug =
+    let doc = {|Enable debugging output|} in
+    C.Arg.(value & flag & info [ "debug" ] ~docv:"DEBUG" ~doc)
+
   let paths =
     C.Arg.(
       value & pos_all file []
@@ -53,7 +58,7 @@ module Command = struct
   let fit =
     let doc = "process FIT files" in
     let info = C.Cmd.info "fit" ~doc ~man:help in
-    C.(Cmd.v info Term.(const fit $ paths))
+    C.(Cmd.v info Term.(const fit $ debug $ paths))
 end
 
 let main () = C.Cmd.eval_result Command.fit |> exit

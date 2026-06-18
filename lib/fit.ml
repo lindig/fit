@@ -13,6 +13,10 @@ let ( >> ) = Int.shift_right
 let fail fmt = Printf.ksprintf fail fmt
 let failwith fmt = Printf.ksprintf failwith fmt
 let sprintf = Printf.sprintf
+let debug = ref true
+
+let debugf fmt =
+  Printf.ksprintf (fun str -> if !debug then prerr_endline str else ()) fmt
 
 type arch = BE  (** Big Endian *) | LE  (** Little Endian *)
 
@@ -248,7 +252,7 @@ let record arch ty =
   advance ty.Type.dev_fields *> return result
 
 module File = struct
-  let _dump dict =
+  let dump dict =
     Dict.bindings dict
     |> List.rev_map (fun (k, v) -> (string_of_int k, Type.json v))
     |> fun x -> `Assoc x |> Yojson.pretty_to_channel stderr
@@ -271,15 +275,15 @@ module File = struct
     let tag = byte & 0b1111_0000 in
     match tag with
     | 0b0100_0000 ->
-        (* Printf.eprintf "%06x tag=0x%x key=%d\n" p tag key; *)
+        debugf "0x%06x tag=0x%x key=%d" p tag key;
         (* This is a block that defines a type - add it to the dict *)
         Type.record ~dev:false >>= fun d -> return (Dict.add key d dict, rs)
     | 0b0110_0000 ->
-        (* Printf.eprintf "%06x tag=0x%x key=%d\n" p tag key; *)
+        debugf "0x%06x tag=0x%x key=%d" p tag key;
         (* This is a block that defines a type - add it to the dict *)
         Type.record ~dev:true >>= fun d -> return (Dict.add key d dict, rs)
     | 0b0000_0000 -> (
-        (* Printf.eprintf "%06x tag=0x%x key=%d\n" p tag key; *)
+        debugf "0x%06x tag=0x%x key=%d" p tag key;
         (* This is a block holding values. Its shape is defined by the
            type it refers to and which we must have read earlier and
            should find in the dictionary *)
@@ -292,11 +296,11 @@ module File = struct
             fail "corrupted file? No type for key=%d offset=%d at %s" key p
               __LOC__)
     | _ when (tag & 0b1000_0000) <> 0 -> (
-        (* Printf.eprintf "%06x tag=0x%x key=%d\n" p tag key; *)
         (* this is a compressed header for a value block that includes a
            timestamp. We ignore the timestamp and only read the other
            fields. *)
         let key = (tag & 0b0110_0000) >> 5 in
+        debugf "0x%06x tag=0x%x key=%d" p tag key;
         match Dict.find_opt key dict with
         | Some ty ->
             let arch = ty.arch in
@@ -306,9 +310,9 @@ module File = struct
             fail "corrupted file? No type for key=%d offset=%d at %s" key p
               __LOC__)
     | n ->
-        Printf.eprintf "%06x tag=0x%x key=%d\n" p tag key;
-        _dump dict;
-        fail "unexpected block with tag 0x%x at offset %d" n p
+        debugf "0x%06x tag=0x%x key=%d" p tag key;
+        dump dict;
+        fail "unexpected block with tag 0x%x at offset %d (0x%x)" n p p
 
   let rec blocks xx finish =
     pos >>= fun p ->
