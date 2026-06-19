@@ -13,7 +13,7 @@ let ( >> ) = Int.shift_right
 let fail fmt = Printf.ksprintf fail fmt
 let failwith fmt = Printf.ksprintf failwith fmt
 let sprintf = Printf.sprintf
-let debug = ref true
+let debug = ref false
 
 let debugf fmt =
   Printf.ksprintf (fun str -> if !debug then prerr_endline str else ()) fmt
