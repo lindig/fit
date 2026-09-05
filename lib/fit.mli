@@ -97,8 +97,9 @@ module Device : sig
   (** name of manufacturer *)
 end
 
-val records : t -> Record.t list
-(** Extract and decode common fields of all records *)
+val records : ?join:bool -> t -> Record.t list
+(** Extract and decode common fields of all records; when [join] is true,
+    adjacent records with the same timestamp are joined into a single record. *)
 
 val device : t -> Device.t
 (** Obtain device information *)

@@ -406,6 +406,8 @@ module Decode = struct
 end
 
 module JSON = struct
+  (* A timestamp is an int; consequently its precision is 1 second and it
+     can't represent sub-second values *)
   let timestamp v =
     let offset = 631065600.0 in
     match v with
@@ -480,6 +482,38 @@ module Record = struct
     ; cycle_length : float option
     ; total_cycles : float option
   }
+
+  let ( ++ ) x y =
+    match (x, y) with
+    | Some _, Some _ -> x
+    | None, Some _ -> y
+    | Some _, None -> x
+    | _, _ -> x
+
+  let add x y =
+    {
+      latitude = x.latitude ++ y.latitude
+    ; longitude = x.longitude ++ y.longitude
+    ; timestamp = x.timestamp ++ y.timestamp
+    ; altitude = x.altitude ++ y.altitude
+    ; heartrate = x.heartrate ++ y.heartrate
+    ; cadence = x.cadence ++ y.cadence
+    ; power = x.power ++ y.power
+    ; speed = x.speed ++ y.speed
+    ; distance = x.distance ++ y.distance
+    ; temperature = x.temperature ++ y.temperature
+    ; cycle_length = x.cycle_length ++ y.cycle_length
+    ; total_cycles = x.total_cycles ++ y.total_cycles
+    }
+
+  let join rs =
+    let rec loop acc = function
+      | [] -> List.rev acc
+      | x :: y :: rs when x.timestamp = y.timestamp ->
+          loop (add x y :: acc) (y :: rs)
+      | r :: rs -> loop (r :: acc) rs
+    in
+    loop [] rs |> List.rev
 
   let record = function
     | { msg = 20; fields } -> (
@@ -652,7 +686,12 @@ module Device = struct
 end
 
 let to_json fit = `List (List.map JSON.record fit.records)
-let records fit = List.filter_map Record.record fit.records
+
+let records ?(join = false) fit =
+  fit.records
+  |> List.filter_map Record.record
+  |> if join then Record.join else Fun.id
+
 let device fit = Device.device fit
 
 let header str =
