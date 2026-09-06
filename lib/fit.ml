@@ -687,7 +687,7 @@ end
 
 let to_json fit = `List (List.map JSON.record fit.records)
 
-let records ?(join = true) fit =
+let records ?(join = false) fit =
   fit.records
   |> List.filter_map Record.record
   |> if join then Record.join else Fun.id
