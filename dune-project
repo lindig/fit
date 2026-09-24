@@ -21,8 +21,7 @@
  (depends
   (ocaml
    (>= 4.08.0))
-  (cmdliner
-   (>= 1.1.0))
+  cmdliner
   (angstrom
    (>= 0.15.0))
   (yojson
