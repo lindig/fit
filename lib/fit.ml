@@ -510,7 +510,8 @@ module Record = struct
     let rec loop acc = function
       | [] -> List.rev acc
       | x :: y :: rs when x.timestamp = y.timestamp ->
-          loop (add x y :: acc) (y :: rs)
+        let xy = add x y in
+          loop acc (xy :: rs)
       | r :: rs -> loop (r :: acc) rs
     in
     loop [] rs |> List.rev
