@@ -2,21 +2,23 @@ module C = Cmdliner
 module J = Yojson
 module F = Fit
 
+let opt_float = function Some v -> `Float v | None -> `Null
+
 let record_to_json (r : F.Record.t) =
   let open F.Record in
   `Assoc
-    [ ("timestamp", match r.timestamp with Some ts -> `Float ts | None -> `Null)
-    ; ("latitude", match r.latitude with Some v -> `Float v | None -> `Null)
-    ; ("longitude", match r.longitude with Some v -> `Float v | None -> `Null)
-    ; ("altitude", match r.altitude with Some v -> `Float v | None -> `Null)
-    ; ("heartrate", match r.heartrate with Some v -> `Float v | None -> `Null)
-    ; ("cadence", match r.cadence with Some v -> `Float v | None -> `Null)
-    ; ("power", match r.power with Some v -> `Float v | None -> `Null)
-    ; ("speed", match r.speed with Some v -> `Float v | None -> `Null)
-    ; ("distance", match r.distance with Some v -> `Float v | None -> `Null)
-    ; ("temperature", match r.temperature with Some v -> `Float v | None -> `Null)
-    ; ("cycle_length", match r.cycle_length with Some v -> `Float v | None -> `Null)
-    ; ("total_cycles", match r.total_cycles with Some v -> `Float v | None -> `Null)
+    [ ("timestamp", opt_float r.timestamp)
+    ; ("latitude", opt_float r.latitude)
+    ; ("longitude", opt_float r.longitude)
+    ; ("altitude", opt_float r.altitude)
+    ; ("heartrate", opt_float r.heartrate)
+    ; ("cadence", opt_float r.cadence)
+    ; ("power", opt_float r.power)
+    ; ("speed", opt_float r.speed)
+    ; ("distance", opt_float r.distance)
+    ; ("temperature", opt_float r.temperature)
+    ; ("cycle_length", opt_float r.cycle_length)
+    ; ("total_cycles", opt_float r.total_cycles)
     ]
 
 let build =
