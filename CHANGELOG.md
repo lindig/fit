@@ -1,3 +1,7 @@
+# Unreleased
+
+* Add `--records` CLI flag to `fit`. When given, parse FIT files and emit only the `Record.t` values (via `Fit.records ~join:true`). Records are emitted in chronological order. Regular mode is unchanged.
+
 # 1.5.0
 
 * Prefer enhanced_speed over speed in Fit.Records
